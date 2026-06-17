@@ -47,6 +47,8 @@ export default function ChatBubble() {
     startY: number;
     moved: boolean;
   } | null>(null);
+  // True right after a drag so the trailing click doesn't also open the panel.
+  const draggedRef = useRef(false);
 
   // Default to the bottom-right corner once we can read the viewport.
   useEffect(() => {
@@ -101,12 +103,21 @@ export default function ChatBubble() {
     });
   };
   const onPointerUp = () => {
-    const started = drag.current;
+    // Remember whether this gesture was a drag; the trailing click reads it.
+    draggedRef.current = !!drag.current?.moved;
     drag.current = null;
-    if (started && !started.moved) setOpen(true); // a tap (not a drag) opens the chat
   };
   const onPointerCancel = () => {
+    draggedRef.current = false;
     drag.current = null;
+  };
+  // Open on click (most reliable for taps across mouse + touch); skip if dragging.
+  const onBubbleClick = () => {
+    if (draggedRef.current) {
+      draggedRef.current = false;
+      return;
+    }
+    setOpen(true);
   };
 
   const send = (text: string) => {
@@ -254,6 +265,7 @@ export default function ChatBubble() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
+        onClick={onBubbleClick}
         style={{ left: pos.x, top: pos.y, width: BUBBLE, height: BUBBLE, touchAction: "none" }}
         className={`fixed z-40 rounded-full bg-gradient-to-br from-accent to-accent-soft text-white grid place-items-center shadow-lg shadow-accent/30 transition-[opacity,transform] duration-300 hover:brightness-110 active:cursor-grabbing cursor-grab ${
           open || hidden
