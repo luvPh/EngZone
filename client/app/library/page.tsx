@@ -8,6 +8,7 @@ import {
   Layers,
   Trash2,
   ChevronDown,
+  Check,
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader, Card, Button } from "@/components/ui";
@@ -42,7 +43,9 @@ function QuizReview({ json }: { json: string }) {
                   className={oi === q.correct ? "text-ok font-medium" : "text-muted"}
                 >
                   {String.fromCharCode(65 + oi)}. {cleanOption(o)}
-                  {oi === q.correct && " ✓"}
+                  {oi === q.correct && (
+                    <Check size={13} className="inline ml-1 align-text-bottom" />
+                  )}
                 </li>
               ))}
             </ul>

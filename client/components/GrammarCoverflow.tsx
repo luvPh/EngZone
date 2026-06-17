@@ -59,7 +59,7 @@ export default function GrammarCoverflow({
     <div className="animate-fade-up">
       <p className="text-center text-sm text-muted mb-6">Chọn cấp độ để bắt đầu</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {LEVELS.map((lvl) => {
           const m = META[lvl];
           const c = counts[lvl] ?? { total: 0, learned: 0 };
@@ -69,7 +69,7 @@ export default function GrammarCoverflow({
               key={lvl}
               type="button"
               onClick={() => onOpen(lvl)}
-              className="level-card group relative flex flex-col text-left rounded-[26px] p-5 min-h-[348px]"
+              className="level-card group relative flex flex-col text-left rounded-[26px] p-5 min-h-[348px] snap-center shrink-0 w-[82%] sm:w-auto"
               style={{ background: m.grad, ["--glow" as string]: m.glow }}
             >
               <div

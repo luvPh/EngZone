@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Search, Circle, CircleDot, CheckCircle2, type LucideIcon } from "lucide-react";
 import { ProgressBar, TextInput } from "@/components/ui";
 import {
   getLevelLessons,
@@ -11,10 +11,10 @@ import {
   type LessonStatus,
 } from "@/lib/grammarLibrary";
 
-const STATUS_ICON: Record<LessonStatus, { icon: string; cls: string }> = {
-  new: { icon: "○", cls: "text-muted" },
-  loaded: { icon: "◐", cls: "text-[#fbbf24]" },
-  learned: { icon: "✓", cls: "text-ok" },
+const STATUS_ICON: Record<LessonStatus, { Icon: LucideIcon; cls: string }> = {
+  new: { Icon: Circle, cls: "text-muted" },
+  loaded: { Icon: CircleDot, cls: "text-[#fbbf24]" },
+  learned: { Icon: CheckCircle2, cls: "text-ok" },
 };
 
 const LEVEL_NAME: Record<string, string> = {
@@ -130,7 +130,7 @@ export default function GrammarLevelView({
                     <Link key={l.id} href={`/grammar/${l.slug}`}>
                       <div className="glass hover-lift rounded-2xl p-3 hover:border-accent/70 hover:shadow-glow-accent h-full">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className={`${st.cls} text-sm`}>{st.icon}</span>
+                          <st.Icon size={15} className={`${st.cls} shrink-0`} />
                           <span className="font-semibold text-white text-sm">{l.titleVi}</span>
                         </div>
                         <div className="text-xs text-accent-soft mb-1">{l.titleEn}</div>
@@ -144,10 +144,17 @@ export default function GrammarLevelView({
         ))}
       </div>
 
-      <p className="mt-5 text-xs text-muted text-center">
-        ○ chưa mở · <span className="text-[#fbbf24]">◐</span> đã tải nội dung ·{" "}
-        <span className="text-ok">✓</span> đã học
-      </p>
+      <div className="mt-5 flex items-center justify-center gap-3 text-xs text-muted flex-wrap">
+        <span className="inline-flex items-center gap-1">
+          <Circle size={13} /> chưa mở
+        </span>
+        <span className="inline-flex items-center gap-1 text-[#fbbf24]">
+          <CircleDot size={13} /> đã tải
+        </span>
+        <span className="inline-flex items-center gap-1 text-ok">
+          <CheckCircle2 size={13} /> đã học
+        </span>
+      </div>
     </div>
   );
 }

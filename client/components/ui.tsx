@@ -123,7 +123,7 @@ export function Segmented<T extends string | number>({
   value,
   onChange,
 }: {
-  options: { value: T; label: string }[];
+  options: { value: T; label: ReactNode }[];
   value: T;
   onChange: (v: T) => void;
 }) {
@@ -134,7 +134,7 @@ export function Segmented<T extends string | number>({
           key={String(o.value)}
           type="button"
           onClick={() => onChange(o.value)}
-          className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition ${
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition ${
             value === o.value
               ? "bg-accent text-white"
               : "text-muted hover:text-white"
