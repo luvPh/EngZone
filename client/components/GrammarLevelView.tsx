@@ -128,7 +128,7 @@ export default function GrammarLevelView({
                   const st = STATUS_ICON[lessonStatus(l)];
                   return (
                     <Link key={l.id} href={`/grammar/${l.slug}`}>
-                      <div className="glass rounded-2xl p-3 hover:border-accent/70 transition h-full">
+                      <div className="glass hover-lift rounded-2xl p-3 hover:border-accent/70 hover:shadow-glow-accent h-full">
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`${st.cls} text-sm`}>{st.icon}</span>
                           <span className="font-semibold text-white text-sm">{l.titleVi}</span>

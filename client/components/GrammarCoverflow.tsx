@@ -5,10 +5,30 @@ import { LEVELS } from "@/lib/grammar";
 import { getAllLessons } from "@/lib/grammarLibrary";
 import { ProgressBar } from "@/components/ui";
 
-const META: Record<string, { name: string; emoji: string; grad: string }> = {
-  "A1-A2": { name: "Sơ cấp", emoji: "🌱", grad: "from-[#7c5cff] to-[#f0abfc]" },
-  "B1-B2": { name: "Trung cấp", emoji: "🚀", grad: "from-[#4f46e5] via-[#7c5cff] to-[#22d3ee]" },
-  "C1-C2": { name: "Cao cấp", emoji: "🏛️", grad: "from-[#0ea5e9] via-[#6366f1] to-[#a855f7]" },
+// Abstract gradient "art" per level: a base diagonal gradient + two blurred
+// orbs, no emoji/icon (per design direction).
+const META: Record<
+  string,
+  { name: string; grad: string; orb1: string; orb2: string }
+> = {
+  "A1-A2": {
+    name: "Sơ cấp",
+    grad: "from-[#7c5cff] via-[#a78bfa] to-[#f0abfc]",
+    orb1: "radial-gradient(circle, #c084fc, transparent 70%)",
+    orb2: "radial-gradient(circle, #f0abfc, transparent 70%)",
+  },
+  "B1-B2": {
+    name: "Trung cấp",
+    grad: "from-[#4f46e5] via-[#7c5cff] to-[#22d3ee]",
+    orb1: "radial-gradient(circle, #818cf8, transparent 70%)",
+    orb2: "radial-gradient(circle, #22d3ee, transparent 70%)",
+  },
+  "C1-C2": {
+    name: "Cao cấp",
+    grad: "from-[#0ea5e9] via-[#6366f1] to-[#a855f7]",
+    orb1: "radial-gradient(circle, #38bdf8, transparent 70%)",
+    orb2: "radial-gradient(circle, #a855f7, transparent 70%)",
+  },
 };
 
 export default function GrammarCoverflow({
@@ -33,7 +53,7 @@ export default function GrammarCoverflow({
   const learnedAll = Object.values(counts).reduce((a, b) => a + b.learned, 0);
 
   return (
-    <div>
+    <div className="animate-fade-up">
       <p className="text-center text-sm text-muted mb-4">Chọn cấp độ để bắt đầu</p>
 
       <div className="flex items-center justify-center gap-0 py-2">
@@ -42,10 +62,10 @@ export default function GrammarCoverflow({
           const c = counts[lvl] ?? { total: 0, learned: 0 };
           const isCenter = i === center;
           const base =
-            "flex-none rounded-3xl overflow-hidden glass transition-all duration-300 cursor-pointer";
+            "flex-none rounded-3xl overflow-hidden glass cursor-pointer transition-all duration-300 ease-out";
           const size = isCenter
             ? "w-52 z-10 scale-100 shadow-glow-accent"
-            : "w-36 scale-90 opacity-60";
+            : "w-36 scale-[0.86] opacity-55 hover:opacity-80";
           const overlap = i < center ? "mr-[-22px]" : i > center ? "ml-[-22px]" : "";
           return (
             <div
@@ -54,13 +74,24 @@ export default function GrammarCoverflow({
               onClick={() => (isCenter ? onOpen(lvl) : setCenter(i))}
             >
               <div
-                className={`bg-gradient-to-br ${m.grad} grid place-items-center ${
-                  isCenter ? "h-44 text-6xl" : "h-32 text-4xl"
-                }`}
+                className={`relative overflow-hidden ${isCenter ? "h-44" : "h-32"}`}
               >
-                <span style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.4))" }}>
-                  {m.emoji}
-                </span>
+                <div className={`absolute inset-0 bg-gradient-to-br ${m.grad}`} />
+                <div
+                  className="absolute -top-8 -left-6 w-28 h-28 rounded-full blur-2xl"
+                  style={{ background: m.orb1 }}
+                />
+                <div
+                  className="absolute -bottom-10 -right-4 w-32 h-32 rounded-full blur-2xl opacity-80"
+                  style={{ background: m.orb2 }}
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "radial-gradient(130% 80% at 50% 125%, rgba(0,0,0,0.4), transparent 60%)",
+                  }}
+                />
               </div>
               <div className="p-3.5">
                 <div className={`font-extrabold text-white ${isCenter ? "text-xl" : "text-base"}`}>

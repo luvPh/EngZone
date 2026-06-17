@@ -107,6 +107,11 @@ export function LevelSlider({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full"
+        style={{
+          background: `linear-gradient(to right, #7c5cff 0%, #a78bfa ${
+            ((value - 1) / 4) * 100
+          }%, rgba(255,255,255,0.14) ${((value - 1) / 4) * 100}%)`,
+        }}
       />
     </div>
   );
