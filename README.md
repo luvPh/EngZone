@@ -1,70 +1,69 @@
 # EngZone
 
-Web app học tiếng Anh chạy trên localhost, dùng **Claude API** làm AI engine. Thay thế việc chat trực tiếp với Claude.ai bằng một giao diện có UI rõ ràng, mobile-first, progress tracking.
+Web app học tiếng Anh chạy local, dùng **Claude API** làm AI engine. Giao diện hiện đại, mobile-first, streaming response realtime.
 
-> Briefing & spec đầy đủ: xem [CLAUDE.md](./CLAUDE.md).
+> Roadmap & spec đầy đủ: xem [CLAUDE.md](./CLAUDE.md).
 
 ## Stack
 
-- **Next.js 14** (App Router) + **React 18** + **TypeScript**
-- **Claude API** qua `@anthropic-ai/sdk` (model mặc định `claude-sonnet-4-6`)
-- **SQLite** (progress tracking) — *deferred*, sẽ thêm sau khi 5 feature chạy ổn (xem MVP scope)
+- **Next.js 14** (App Router, full-stack) + **React 18** + **TypeScript**
+- **Tailwind CSS 3** + **lucide-react** icons — responsive (sidebar desktop / bottom tabs mobile)
+- **Claude** — 2 chế độ tự chọn: **Claude CLI** (subscription, mặc định, không cần key) hoặc **API key** (`@anthropic-ai/sdk`). Model mặc định `claude-sonnet-4-6`.
+- Progress tracking bằng `localStorage` (streak, lượt luyện tập)
 
-## 5 features
+App là **một Next.js app** trong `client/`. Việc gọi Claude (CLI hoặc SDK) chạy server-side trong Route Handler `app/api/chat/route.ts` — key/CLI không lộ ra browser.
 
-| Route | Command gửi lên AI | Mô tả |
-|---|---|---|
-| `/quiz` | `/quiz [topic] [level]` | Quiz MCQ / fill-in-blank / error correction |
-| `/essay` | `/essay [topic] [level]` | Essay + vocab + structure + prompt |
-| `/grammar` | `/grammar [câu hỏi]` | Giải thích ngữ pháp logic-first |
-| `/flashcard` | `/flash [topic]` | 6 flashcard theo chủ đề |
-| `/check` | `/check [text]` | Sửa lỗi 3 cấp độ 🔴🟡🟢 |
+## Tính năng
 
-Mỗi `skills/<name>/SKILL.md` là một **system prompt**. App load `english-master` làm system prompt duy nhất (đã gộp logic của cả 5 skill).
+| Route | Mô tả |
+|---|---|
+| `/` | Home: streak + lịch 7 ngày + lối tắt tính năng |
+| `/quiz` | **Luyện tập**: nhập chủ đề + số câu + dạng + độ khó → tự trả lời → chấm điểm. **Đề thi THPT**: tạo đề thi thử đúng cấu trúc tốt nghiệp THPT 2025 (4 dạng, 20/40 câu) → chấm /10 |
+| `/essay` | Sinh **essay + từ vựng** (vocab hiển thị từng dòng), không kèm structure/comprehension |
+| `/grammar` | Giải thích ngữ pháp (logic-first) |
+| `/flashcard` | Bộ 6 thẻ theo **chủ đề + độ khó** — carousel 1 thẻ to, nút Tiếp, phát âm, lật xem nghĩa |
+| `/check` | Sửa lỗi tiếng Anh theo mức độ |
+| `/library` | **Thư viện**: quiz/essay/flashcard đã tạo — xem lại, tái dùng (tránh gen trùng), xoá |
+
+Mỗi `skills/<name>/SKILL.md` là một system prompt. App load `english-master` (đã gộp logic cả 5 skill) làm system prompt duy nhất.
+
+**Bong bóng tra cứu nhanh** (góc dưới phải, mọi trang trừ Quiz): hỏi nhanh nghĩa từ/ngữ pháp, trả lời ngắn gọn để tiết kiệm token. **Đề thi THPT** có nút "Bắt đầu làm bài" → đếm ngược (25p mini / 50p full), hết giờ tự nộp, và khoá chuyển tab khi đang làm.
+
+**State** giữ trong RAM (`lib/store.tsx`) → chuyển tab không mất dữ liệu, chỉ reset khi tải lại trang. Quiz & flashcard gen ngầm dưới dạng JSON rồi render UI tương tác; quiz/essay/flashcard được lưu vào thư viện (`localStorage`).
+
+## Chạy local
+
+**Mặc định dùng Claude CLI (subscription) — không cần API key.** Chỉ cần đã đăng nhập 1 lần: `claude login`.
+
+```bash
+# 1. Cài dependencies (root + client)
+npm run install:all
+
+# 2. Chạy dev (tự dùng Claude CLI)
+npm run dev          # http://localhost:3000
+
+# Kiểm tra mode đang chạy:
+curl http://localhost:3000/api/health   # → {"mode":"cli",...}
+
+# Build production
+npm run build
+```
+
+**Tuỳ chọn — dùng API key thay vì subscription:**
+```bash
+cp client/.env.local.example client/.env.local   # điền ANTHROPIC_API_KEY=sk-ant-...
+```
+Có key → app tự chuyển sang API mode. Lấy key tại https://console.anthropic.com
 
 ## Cấu trúc
 
 ```
 EngZone/
-├── CLAUDE.md                 # briefing đầy đủ
-├── skills/                   # 5 SKILL.md (system prompts)
-│   └── english-master/SKILL.md
-├── src/
-│   ├── app/
-│   │   ├── page.tsx          # redirect → /quiz
-│   │   ├── layout.tsx        # shell + bottom tab bar
-│   │   ├── quiz|essay|grammar|flashcard|check/page.tsx
-│   │   └── api/chat/route.ts # proxy stream → Claude API
-│   ├── components/
-│   │   ├── TabBar.tsx
-│   │   └── useChatStream.ts  # hook stream text từ /api/chat
-│   └── lib/
-│       ├── claude.ts         # Anthropic client + stream helper
-│       └── skills.ts         # load SKILL.md
-└── .env.local.example
+├── CLAUDE.md          # roadmap (living)
+├── package.json       # scripts uỷ quyền sang client/
+├── skills/            # 5 SKILL.md (system prompts)
+└── client/            # Next.js app
+    ├── app/           # pages (quiz/essay/grammar/flashcard/check/library) + api/chat + api/health
+    ├── components/    # Nav, ui, Markdown, OutputPanel, QuizPlayer, CardCarousel
+    └── lib/           # claude/claudeCli (CLI+SDK), store, stream, prompts, extractJson, library, storage, types
 ```
-
-## Chạy local
-
-```bash
-# 1. Cài dependencies
-npm install
-
-# 2. Cấu hình API key
-cp .env.local.example .env.local
-# mở .env.local, điền ANTHROPIC_API_KEY=sk-ant-...
-
-# 3. Chạy dev
-npm run dev          # http://localhost:3000
-```
-
-Lấy API key tại https://console.anthropic.com
-
-## Trạng thái
-
-Đây là **scaffold** — khung dự án đã chạy được (5 tab, streaming response từ Claude). Còn lại theo MVP scope trong CLAUDE.md:
-
-- [ ] Parse quiz response → interactive MCQ
-- [ ] Flashcard flip-card animation (parse 6 cards)
-- [ ] Color coding cho `/check` (🔴🟡🟢)
-- [ ] Thêm SQLite progress tracking + màn hình Stats/streak

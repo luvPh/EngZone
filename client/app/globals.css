@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-bg text-slate-100 font-sans antialiased;
+  background-image: radial-gradient(
+      900px 500px at 100% -10%,
+      rgba(124, 92, 255, 0.12),
+      transparent 60%
+    ),
+    radial-gradient(700px 400px at -10% 110%, rgba(56, 189, 248, 0.08), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* range slider accent */
+input[type="range"] {
+  @apply accent-accent;
+}
+
+/* Markdown output styling */
+.prose-claude {
+  @apply text-[15px] leading-relaxed text-slate-200;
+}
+.prose-claude h1,
+.prose-claude h2,
+.prose-claude h3 {
+  @apply font-bold mt-4 mb-2 text-white;
+}
+.prose-claude h1 { @apply text-xl; }
+.prose-claude h2 { @apply text-lg border-b border-border/60 pb-1; }
+.prose-claude h3 { @apply text-base; }
+.prose-claude p { @apply my-2; }
+.prose-claude ul { @apply list-disc pl-5 my-2 space-y-1; }
+.prose-claude ol { @apply list-decimal pl-5 my-2 space-y-1; }
+.prose-claude strong { @apply text-white font-semibold; }
+.prose-claude code {
+  @apply bg-black/40 px-1.5 py-0.5 rounded text-accent text-[13px];
+}
+.prose-claude pre {
+  @apply bg-black/40 p-3 rounded-lg overflow-x-auto my-2 text-[13px];
+}
+.prose-claude pre code { @apply bg-transparent p-0 text-slate-200; }
+.prose-claude table { @apply w-full my-3 text-sm border-collapse; }
+.prose-claude th,
+.prose-claude td { @apply border border-border px-2.5 py-1.5 text-left; }
+.prose-claude th { @apply bg-white/5; }
+.prose-claude blockquote {
+  @apply border-l-2 border-accent pl-3 italic text-muted my-2;
+}
+.prose-claude a { @apply text-accent underline underline-offset-2; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeUp 0.25s ease-out; }

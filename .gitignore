@@ -1,21 +1,21 @@
-# dependencies
-/node_modules
-/.pnp
+# dependencies (any level, incl. client/)
+node_modules/
+.pnp
 .pnp.js
 
 # next.js
-/.next/
-/out/
+.next/
+out/
 next-env.d.ts
 
 # production
-/build
+build/
 
 # database (local SQLite)
 *.db
 *.db-shm
 *.db-wal
-/data
+data/
 
 # env files — never commit secrets
 .env
