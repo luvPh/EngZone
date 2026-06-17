@@ -37,7 +37,7 @@ export default function Nav() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col md:w-60 md:shrink-0 border-r border-border bg-surface/60 backdrop-blur p-4 gap-1">
+      <aside className="hidden md:flex md:flex-col md:w-60 md:shrink-0 border-r border-white/10 glass-nav p-4 gap-1">
         <div className="flex items-center gap-2 px-2 py-3 mb-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-soft grid place-items-center text-white font-bold">
             E
@@ -75,7 +75,7 @@ export default function Nav() {
       </aside>
 
       {/* Mobile bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-20 flex bg-surface/95 backdrop-blur border-t border-border">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-20 flex glass-nav border-t border-white/10">
         {TABS.map((t) => {
           const active = isActive(pathname, t.href);
           const Icon = t.icon;

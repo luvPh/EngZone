@@ -3,7 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, RefreshCw, ListChecks, Layers, Database } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCw,
+  ListChecks,
+  Layers,
+  Database,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { PageHeader, Button } from "@/components/ui";
 import OutputPanel from "@/components/OutputPanel";
 import ModelSelector from "@/components/ModelSelector";
@@ -12,7 +21,23 @@ import { useFeatureState } from "@/lib/store";
 import { runCommand } from "@/lib/stream";
 import { grammarLessonCommand } from "@/lib/prompts";
 import { recordActivity } from "@/lib/storage";
-import { getLesson, saveLessonContent, type StoredLesson } from "@/lib/grammarLibrary";
+import { slugify } from "@/lib/slug";
+import {
+  getLesson,
+  saveLessonContent,
+  setLearned,
+  getLessonNeighbors,
+  type StoredLesson,
+} from "@/lib/grammarLibrary";
+
+function tocFromMarkdown(md: string): { level: number; text: string; id: string }[] {
+  const out: { level: number; text: string; id: string }[] = [];
+  for (const line of md.split("\n")) {
+    const m = /^(#{2,3})\s+(.*)$/.exec(line.trim());
+    if (m) out.push({ level: m[1].length, text: m[2].trim(), id: slugify(m[2].trim()) });
+  }
+  return out;
+}
 
 export default function GrammarLessonView({ slug }: { slug: string }) {
   const router = useRouter();
@@ -20,6 +45,11 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [fromCache, setFromCache] = useState(false);
+  const [learned, setLearnedState] = useState(false);
+  const [neighbors, setNeighbors] = useState<{
+    prev: StoredLesson | null;
+    next: StoredLesson | null;
+  }>({ prev: null, next: null });
 
   const [model, setModel] = useModel("grammar");
   // Prefill keys read by Quiz / Flashcard on mount.
@@ -56,6 +86,10 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
   useEffect(() => {
     const l = getLesson(slug);
     setLesson(l ?? null);
+    if (l) {
+      setLearnedState(l.learned);
+      setNeighbors(getLessonNeighbors(slug));
+    }
     if (l) runGen(l, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
@@ -75,6 +109,12 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
       </div>
     );
   }
+
+  const toggleLearned = () => {
+    const next = !learned;
+    setLearnedState(next);
+    setLearned(slug, next);
+  };
 
   const goQuiz = () => {
     setQuizPrefill(lesson.titleEn);
@@ -110,6 +150,9 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
       <p className="text-muted text-sm -mt-2 mb-4">{lesson.description}</p>
 
       <div className="flex flex-wrap gap-2 mb-1">
+        <Button variant={learned ? "primary" : "ghost"} onClick={toggleLearned}>
+          <Check size={16} /> {learned ? "Đã học ✓" : "Đánh dấu đã học"}
+        </Button>
         <Button variant="ghost" onClick={() => runGen(lesson, true)} disabled={loading}>
           <RefreshCw size={16} /> Tạo lại
         </Button>
@@ -127,7 +170,56 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
         </p>
       )}
 
+      {content && !loading && tocFromMarkdown(content).length > 0 && (
+        <nav className="glass rounded-2xl p-3 mt-4 mb-1">
+          <div className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
+            Mục lục
+          </div>
+          <ul className="space-y-1">
+            {tocFromMarkdown(content).map((h, i) => (
+              <li key={i} className={h.level === 3 ? "pl-3" : ""}>
+                <button
+                  onClick={() =>
+                    document.getElementById(h.id)?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                  className="text-sm text-slate-300 hover:text-accent text-left"
+                >
+                  {h.text}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
       <OutputPanel output={content} loading={loading} emptyHint="Đang tải bài học…" />
+
+      {(neighbors.prev || neighbors.next) && (
+        <div className="flex items-center justify-between gap-3 mt-5">
+          {neighbors.prev ? (
+            <Link
+              href={`/grammar/${neighbors.prev.slug}`}
+              className="glass rounded-xl px-3 py-2 text-sm text-slate-200 hover:text-white inline-flex items-center gap-1.5 max-w-[48%]"
+            >
+              <ChevronLeft size={16} className="shrink-0" />
+              <span className="truncate">{neighbors.prev.titleVi}</span>
+            </Link>
+          ) : (
+            <span />
+          )}
+          {neighbors.next ? (
+            <Link
+              href={`/grammar/${neighbors.next.slug}`}
+              className="glass rounded-xl px-3 py-2 text-sm text-slate-200 hover:text-white inline-flex items-center gap-1.5 max-w-[48%] ml-auto"
+            >
+              <span className="truncate">Bài tiếp: {neighbors.next.titleVi}</span>
+              <ChevronRight size={16} className="shrink-0" />
+            </Link>
+          ) : (
+            <span />
+          )}
+        </div>
+      )}
     </div>
   );
 }

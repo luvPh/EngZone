@@ -9,14 +9,12 @@ export interface RunHandlers {
   onError: (message: string) => void;
 }
 
-/**
- * POST a single command to /api/chat and stream the text back. Updates are
- * delivered via handlers (which typically write into the persistent store),
- * so streaming survives navigation away from the originating page.
- */
-export async function runCommand(
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
+/** POST a full conversation to /api/chat and stream the assistant reply. */
+export async function runChat(
   key: string,
-  command: string,
+  messages: ChatMessage[],
   h: RunHandlers,
   opts: { maxTokens?: number; provider?: string } = {}
 ): Promise<void> {
@@ -30,7 +28,7 @@ export async function runCommand(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        messages: [{ role: "user", content: command }],
+        messages,
         maxTokens: opts.maxTokens,
         provider: opts.provider,
       }),
@@ -62,6 +60,16 @@ export async function runCommand(
     if ((err as Error)?.name === "AbortError") return;
     h.onError(err instanceof Error ? err.message : String(err));
   }
+}
+
+/** Single-message convenience wrapper. */
+export async function runCommand(
+  key: string,
+  command: string,
+  h: RunHandlers,
+  opts: { maxTokens?: number; provider?: string } = {}
+): Promise<void> {
+  return runChat(key, [{ role: "user", content: command }], h, opts);
 }
 
 export function abortCommand(key: string) {

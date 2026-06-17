@@ -129,10 +129,6 @@ export function examCommand(size: 20 | 40): string {
   ].join("\n");
 }
 
-export function grammarCommand(question: string): string {
-  return `/grammar ${question}\n\n${GRAMMAR_FORMAT}\n${NO_SUGGEST}`;
-}
-
 // Bài học grammar tĩnh — bọc aiKeywords + level vào prompt cho grammar-explainer.
 export function grammarLessonCommand(l: {
   titleEn: string;
@@ -161,4 +157,14 @@ export function chatCommand(question: string): string {
 
 export function checkCommand(text: string): string {
   return `/check ${text}\n\n${NO_SUGGEST}`;
+}
+
+// Hỏi đáp ngữ pháp nhiều lượt: trả lời ngắn gọn đủ ý, không format icon dài.
+export function grammarChatTurn(question: string): string {
+  return [
+    `/grammar ${question}`,
+    ``,
+    `Trả lời NGẮN GỌN, đủ ý, bằng tiếng Việt; dùng ví dụ ngắn khi cần. Không dùng bộ icon trang trí dài.`,
+    NO_SUGGEST,
+  ].join("\n");
 }

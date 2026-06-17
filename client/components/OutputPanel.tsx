@@ -21,7 +21,7 @@ export default function OutputPanel({
   }
 
   return (
-    <div className="mt-5 bg-surface border border-border rounded-2xl p-5 min-h-[80px] shadow-card animate-fade-up">
+    <div className="mt-5 reading-surface rounded-2xl p-5 min-h-[80px] animate-fade-up">
       {output ? (
         <Markdown>{output}</Markdown>
       ) : (

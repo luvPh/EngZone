@@ -17,7 +17,7 @@ export function PageHeader({
     <header className="mb-5 flex items-start justify-between gap-3">
       <div className="flex items-center gap-3">
         {icon && (
-          <div className="w-10 h-10 rounded-xl bg-accent/15 text-accent grid place-items-center shrink-0">
+          <div className="w-10 h-10 rounded-xl glass-input text-accent grid place-items-center shrink-0">
             {icon}
           </div>
         )}
@@ -34,16 +34,15 @@ export function PageHeader({
 export function Card({
   children,
   className = "",
+  variant = "glass",
 }: {
   children: ReactNode;
   className?: string;
+  variant?: "glass" | "reading";
 }) {
+  const surface = variant === "reading" ? "reading-surface" : "glass";
   return (
-    <div
-      className={`bg-surface border border-border rounded-2xl p-4 shadow-card ${className}`}
-    >
-      {children}
-    </div>
+    <div className={`${surface} rounded-2xl p-4 ${className}`}>{children}</div>
   );
 }
 
@@ -57,7 +56,7 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 }
 
 const inputBase =
-  "w-full bg-surface-2 border border-border rounded-xl px-3.5 py-2.5 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 transition";
+  "w-full glass-input rounded-xl px-3.5 py-2.5 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 transition";
 
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${inputBase} ${props.className ?? ""}`} />;
@@ -76,8 +75,8 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" }) {
   const styles =
     variant === "primary"
-      ? "bg-gradient-to-r from-accent to-accent-soft text-white hover:brightness-110 shadow-lg shadow-accent/20"
-      : "bg-white/5 hover:bg-white/10 text-slate-200 border border-border";
+      ? "bg-gradient-to-r from-accent to-accent-soft text-white hover:brightness-110 shadow-glow-accent"
+      : "glass-input hover:bg-white/10 text-slate-200";
   return (
     <button
       {...props}
@@ -124,7 +123,7 @@ export function Segmented<T extends string | number>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex rounded-xl bg-surface-2 border border-border p-1 gap-1">
+    <div className="inline-flex rounded-xl glass-input p-1 gap-1">
       {options.map((o) => (
         <button
           key={String(o.value)}
@@ -148,5 +147,25 @@ export function Spinner({ className = "" }: { className?: string }) {
     <span
       className={`inline-block w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin ${className}`}
     />
+  );
+}
+
+export function ProgressBar({
+  value,
+  max,
+  className = "",
+}: {
+  value: number;
+  max: number;
+  className?: string;
+}) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div className={`h-[7px] rounded-full bg-white/10 overflow-hidden ${className}`}>
+      <div
+        className="h-full rounded-full bg-gradient-to-r from-accent to-[#38bdf8] transition-[width] duration-500"
+        style={{ width: `${pct}%` }}
+      />
+    </div>
   );
 }

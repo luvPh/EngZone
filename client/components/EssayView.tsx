@@ -6,13 +6,13 @@ import type { Essay } from "@/lib/types";
 export default function EssayView({ data }: { data: Essay }) {
   return (
     <div className="mt-5 space-y-5 animate-fade-up">
-      <div className="bg-surface border border-border rounded-2xl p-5 shadow-card">
+      <div className="reading-surface rounded-2xl p-5">
         <h2 className="text-lg font-bold text-white mb-2">Essay</h2>
         <Markdown>{data.essay}</Markdown>
       </div>
 
       {data.vocab?.length > 0 && (
-        <div className="bg-surface border border-border rounded-2xl p-5 shadow-card">
+        <div className="reading-surface rounded-2xl p-5">
           <h2 className="text-lg font-bold text-white mb-3">
             Vocabulary{" "}
             <span className="text-muted text-sm font-normal">
