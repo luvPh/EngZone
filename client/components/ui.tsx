@@ -34,16 +34,15 @@ export function PageHeader({
 export function Card({
   children,
   className = "",
+  variant = "glass",
 }: {
   children: ReactNode;
   className?: string;
+  variant?: "glass" | "reading";
 }) {
+  const surface = variant === "reading" ? "reading-surface" : "glass";
   return (
-    <div
-      className={`bg-surface border border-border rounded-2xl p-4 shadow-card ${className}`}
-    >
-      {children}
-    </div>
+    <div className={`${surface} rounded-2xl p-4 ${className}`}>{children}</div>
   );
 }
 
