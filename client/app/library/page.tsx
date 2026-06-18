@@ -111,7 +111,7 @@ function Row({
   const m = META[it.feature];
   const Icon = m.icon;
   return (
-    <div className="glass rounded-2xl overflow-hidden">
+    <div className="glass hover-lift rounded-2xl overflow-hidden hover:shadow-glow-accent">
       <div className="flex items-center gap-3 p-3.5">
         <div
           className="w-9 h-9 rounded-lg grid place-items-center shrink-0"

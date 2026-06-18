@@ -1,17 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { ListChecks, Sparkles, RefreshCw, GraduationCap, Play, Lock } from "lucide-react";
-import {
-  PageHeader,
-  Field,
-  TextInput,
-  LevelSlider,
-  Segmented,
-  Button,
-  Spinner,
-  Card,
-} from "@/components/ui";
+import { ListChecks, RefreshCw, GraduationCap, Play, Lock } from "lucide-react";
+import { PageHeader, LevelSlider, Segmented, Button, Spinner, Card } from "@/components/ui";
+import GenForm from "@/components/GenForm";
 import QuizPlayer, { type QuizGameState } from "@/components/QuizPlayer";
 import ExamPlayer, { type ExamState } from "@/components/ExamPlayer";
 import GenProgress from "@/components/GenProgress";
@@ -23,6 +15,7 @@ import { quizCommand, examCommand, type QuizType } from "@/lib/prompts";
 import { extractJson } from "@/lib/extractJson";
 import { recordActivity } from "@/lib/storage";
 import { findItem, saveItem } from "@/lib/library";
+import { randomTopic } from "@/lib/topicPool";
 import type { Quiz, Exam } from "@/lib/types";
 
 type Mode = "practice" | "exam";
@@ -33,12 +26,14 @@ interface Inputs {
   level: number;
   count: number;
   type: QuizType;
+  custom: boolean;
 }
 interface RunState {
   loading: boolean;
   error: string;
   quiz: Quiz | null;
   source: "" | "new" | "library";
+  topic: string;
 }
 interface ExamRun {
   loading: boolean;
@@ -62,12 +57,14 @@ export default function QuizPage() {
     level: 2,
     count: 5,
     type: "mcq",
+    custom: false,
   });
   const [run, setRun] = useFeatureState<RunState>(`${KEY}:run`, {
     loading: false,
     error: "",
     quiz: null,
     source: "",
+    topic: "",
   });
   const [game, setGame] = useFeatureState<QuizGameState>(`${KEY}:game`, {
     answers: {},
@@ -101,7 +98,7 @@ export default function QuizPage() {
 
   useEffect(() => {
     if (!quizPrefill) return;
-    setInputs((i) => ({ ...i, topic: quizPrefill }));
+    setInputs((i) => ({ ...i, topic: quizPrefill, custom: true }));
     setMode("practice");
     setQuizPrefill("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,9 +124,12 @@ export default function QuizPage() {
 
   const finishTest = () => setNavLocked(false);
 
-  const generate = (forceNew = false) => {
-    const topic = inputs.topic.trim();
-    if (!topic || run.loading) return;
+  const generate = (forceNew = false, resolvedTopic?: string) => {
+    if (run.loading) return;
+    const topic = (
+      resolvedTopic ??
+      (inputs.custom && inputs.topic.trim() ? inputs.topic.trim() : randomTopic())
+    ).trim();
     setGame({ answers: {}, submitted: false });
 
     const meta = { count: inputs.count, type: inputs.type };
@@ -138,13 +138,13 @@ export default function QuizPage() {
       if (cached) {
         const quiz = extractJson<Quiz>(cached.content);
         if (quiz?.questions?.length) {
-          setRun({ loading: false, error: "", quiz, source: "library" });
+          setRun({ loading: false, error: "", quiz, source: "library", topic });
           return;
         }
       }
     }
 
-    setRun({ loading: true, error: "", quiz: null, source: "new" });
+    setRun({ loading: true, error: "", quiz: null, source: "new", topic });
     recordActivity({ feature: "quiz", topic, level: inputs.level });
 
     runCommand(KEY, quizCommand({ topic, level: inputs.level, ...meta, fresh: forceNew }), {
@@ -152,10 +152,10 @@ export default function QuizPage() {
       onDone: (full) => {
         const quiz = extractJson<Quiz>(full);
         if (!quiz?.questions?.length) {
-          setRun({ loading: false, error: "Không phân tích được quiz. Thử lại nhé.", quiz: null, source: "" });
+          setRun({ loading: false, error: "Không phân tích được quiz. Thử lại nhé.", quiz: null, source: "", topic });
           return;
         }
-        setRun({ loading: false, error: "", quiz, source: "new" });
+        setRun({ loading: false, error: "", quiz, source: "new", topic });
         saveItem({
           feature: "quiz",
           topic,
@@ -165,7 +165,7 @@ export default function QuizPage() {
           content: JSON.stringify(quiz),
         });
       },
-      onError: (msg) => setRun({ loading: false, error: msg, quiz: null, source: "" }),
+      onError: (msg) => setRun({ loading: false, error: msg, quiz: null, source: "", topic }),
     }, { provider: model });
   };
 
@@ -251,17 +251,17 @@ export default function QuizPage() {
 
       {mode === "practice" ? (
         <>
-          <Card>
-            <Field label="Chủ đề">
-              <TextInput
-                value={inputs.topic}
-                onChange={(e) => setInputs({ ...inputs, topic: e.target.value })}
-                placeholder="vd: present perfect, articles, prepositions…"
-              />
-            </Field>
-            <div className="mb-4">
-              <LevelSlider value={inputs.level} onChange={(level) => setInputs({ ...inputs, level })} />
-            </div>
+          <GenForm
+            custom={inputs.custom}
+            onCustomChange={(custom) => setInputs({ ...inputs, custom })}
+            topic={inputs.topic}
+            onTopicChange={(topic) => setInputs({ ...inputs, topic })}
+            loading={run.loading}
+            onGenerate={(t) => generate(false, t)}
+            label="Tạo Quiz"
+            placeholder="vd: present perfect, articles, prepositions…"
+          >
+            <LevelSlider value={inputs.level} onChange={(level) => setInputs({ ...inputs, level })} />
             <div className="flex flex-wrap gap-5">
               <div>
                 <div className="text-sm font-medium text-slate-300 mb-1.5">Số câu</div>
@@ -288,28 +288,23 @@ export default function QuizPage() {
                 />
               </div>
             </div>
-            <div className="flex gap-2 mt-5">
-              <Button onClick={() => generate(false)} disabled={run.loading || !inputs.topic.trim()}>
-                {run.loading ? <Spinner /> : <Sparkles size={18} />}
-                {run.loading ? "Đang tạo…" : "Tạo quiz"}
-              </Button>
-              {run.quiz && !run.loading && (
-                <Button variant="ghost" onClick={() => generate(true)}>
-                  <RefreshCw size={16} /> Tạo mới
-                </Button>
-              )}
-            </div>
-          </Card>
+          </GenForm>
 
-          {run.source === "library" && run.quiz && (
-            <p className="text-xs text-muted mt-3">
-              Đã tải từ thư viện. Bấm “Tạo mới” để tạo bộ khác.
-            </p>
+          {run.quiz && !run.loading && (
+            <div className="flex items-center justify-between gap-3 mt-3">
+              <span className="text-xs text-muted">
+                Chủ đề: <span className="text-slate-300 font-medium">{run.topic}</span>
+                {run.source === "library" && " · đã tải từ thư viện"}
+              </span>
+              <Button variant="ghost" onClick={() => generate(true)}>
+                <RefreshCw size={16} /> Tạo mới
+              </Button>
+            </div>
           )}
           {run.error && <p className="text-bad text-sm mt-3">{run.error}</p>}
           {run.loading && (
             <div className="mt-5 flex items-center gap-2 text-muted text-sm">
-              <Spinner /> Đang tạo {inputs.count} câu hỏi…
+              <Spinner /> Đang tạo {inputs.count} câu hỏi về “{run.topic}”…
             </div>
           )}
           {run.quiz && !run.loading && (
