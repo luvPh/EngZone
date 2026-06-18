@@ -87,38 +87,45 @@ export default function PracticePage() {
           </Link>
         </div>
       ) : phase === "setup" ? (
-        <div className="glass rounded-2xl p-5">
-          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm mb-5">
-            <span className="text-slate-300">
-              Tổng <span className="font-bold text-white">{stats.total}</span> từ
-            </span>
-            <span className="text-ok">Đã thuộc {stats.mastered}</span>
-            <span className="text-accent-soft">Đang học {stats.learning}</span>
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="grid grid-cols-3 gap-3 flex-1">
+            <div className="glass rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center text-center min-h-[120px]">
+              <div className="text-4xl font-extrabold text-white leading-none">{stats.total}</div>
+              <div className="text-xs text-muted mt-2">Tổng</div>
+            </div>
+            <div className="glass rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center text-center min-h-[120px]">
+              <div className="text-4xl font-extrabold text-ok leading-none">{stats.mastered}</div>
+              <div className="text-xs text-muted mt-2">Đã thuộc</div>
+            </div>
+            <div className="glass rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center text-center min-h-[120px]">
+              <div className="text-4xl font-extrabold text-accent-soft leading-none">{stats.learning}</div>
+              <div className="text-xs text-muted mt-2">Đang học</div>
+            </div>
           </div>
 
-          {stats.learning === 0 ? (
-            <p className="text-muted text-sm">
-              Bạn đã thuộc tất cả! Tạo thêm Vocab with Essay để có từ mới, hoặc đặt lại tiến độ bên dưới.
-            </p>
-          ) : (
-            <>
-              <div className="text-sm font-medium text-slate-300 mb-1.5">Số từ mỗi lượt</div>
-              <Segmented
-                value={size}
-                onChange={(v) => setSize(v)}
-                options={[
-                  { value: 10, label: "10" },
-                  { value: 15, label: "15" },
-                  { value: 20, label: "20" },
-                ]}
-              />
-              <div className="mt-5">
-                <Button onClick={start}>
+          <div className="glass rounded-2xl p-5 lg:w-80 shrink-0 flex flex-col justify-center">
+            {stats.learning === 0 ? (
+              <p className="text-muted text-sm">
+                Bạn đã thuộc tất cả! Tạo thêm Vocab with Essay để có từ mới, hoặc đặt lại tiến độ.
+              </p>
+            ) : (
+              <>
+                <div className="text-sm font-medium text-slate-300 mb-1.5">Số từ mỗi lượt</div>
+                <Segmented
+                  value={size}
+                  onChange={(v) => setSize(v)}
+                  options={[
+                    { value: 10, label: "10" },
+                    { value: 15, label: "15" },
+                    { value: 20, label: "20" },
+                  ]}
+                />
+                <Button onClick={start} className="mt-5 w-full justify-center">
                   <GraduationCap size={18} /> Bắt đầu luyện
                 </Button>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
       ) : phase === "playing" ? (
         <VocabPractice words={batch} onDone={finish} />

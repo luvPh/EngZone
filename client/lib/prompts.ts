@@ -106,8 +106,6 @@ export function essayCommand(topic: string, level: number): string {
   ].join("\n");
 }
 
-export type ExamVariant = "thpt" | "mixed";
-
 const EXAM_SCHEMA =
   '{"title":"Tên đề","sections":[{"instruction":"hướng dẫn dạng bài","passage":"văn bản/đoạn đề bài nếu có (markdown), bỏ trống nếu không cần","questions":[{"q":"câu hỏi","options":["A","B","C","D"],"correct":0,"explain":"giải thích tiếng Việt ngắn"}]}]}';
 
@@ -121,41 +119,24 @@ function sampleTopics(n: number): string {
   return a.slice(0, n).join(", ");
 }
 
-export function examCommand(size: 20 | 40, variant: ExamVariant = "thpt"): string {
-  return variant === "mixed" ? mixedExamCommand(size) : thptExamCommand(size);
-}
+export type ExamDifficulty = 1 | 2 | 3;
 
-// Đề tổng hợp ngẫu nhiên: trộn ngữ pháp + từ vựng + cloze + đọc hiểu trên các chủ
-// đề ngẫu nhiên — KHÔNG bám cấu trúc THPT, để luyện đa dạng.
-export function mixedExamCommand(size: 20 | 40): string {
-  const full = size === 40;
-  const gv = full ? 20 : 10; // ngữ pháp + từ vựng (MCQ rời)
-  const cloze = full ? 8 : 4; // điền từ vào một đoạn văn
-  const rc = full ? 12 : 6; // đọc hiểu (1-2 đoạn)
-  const total = gv + cloze + rc;
-  return [
-    `Tạo một ĐỀ KIỂM TRA TIẾNG ANH TỔNG HỢP đa dạng (không bám theo một kỳ thi cụ thể nào), gồm ${total} câu trắc nghiệm 4 đáp án A/B/C/D.`,
-    `Đa dạng hoá chủ đề/ngữ cảnh — xoay quanh những chủ đề như: ${sampleTopics(8)}.`,
-    `Chia thành 3 "sections":`,
-    `1) Ngữ pháp & Từ vựng — ${gv} câu MCQ rời (thì, mệnh đề, giới từ, cụm từ, collocation, từ đồng/trái nghĩa…), KHÔNG cần "passage".`,
-    `2) Hoàn thành đoạn văn (cloze) — một đoạn văn có ${cloze} chỗ trống đánh số trong "passage"; mỗi câu hỏi ứng với một chỗ trống.`,
-    `3) Đọc hiểu — đặt bài đọc vào "passage", ${rc} câu hỏi về bài đó (ý chính, chi tiết, suy luận, từ vựng trong ngữ cảnh).`,
-    `Mức độ: dễ→khó xen kẽ, phù hợp người học trung cấp B1-B2.`,
-    `CHỈ trả về một JSON object hợp lệ theo schema sau — KHÔNG markdown, KHÔNG văn bản ngoài JSON:`,
-    EXAM_SCHEMA,
-    `Mỗi câu đúng 4 "options" (chỉ nội dung, không tiền tố "A."/"B."), "correct" là index 0-3, "explain" tiếng Việt ngắn gọn.`,
-  ].join("\n");
-}
+const EXAM_DIFFICULTY: Record<ExamDifficulty, { label: string; hint: string }> = {
+  1: { label: "Dễ", hint: "từ vựng & cấu trúc cơ bản (A2–B1); ~55% nhận biết, 30% thông hiểu, 15% vận dụng" },
+  2: { label: "Trung bình", hint: "trình độ B1–B2; ~40% nhận biết, 30% thông hiểu, 30% vận dụng" },
+  3: { label: "Khó", hint: "trình độ B2–C1, từ vựng học thuật, nhiều câu suy luận; ~20% nhận biết, 35% thông hiểu, 45% vận dụng" },
+};
 
-// Đề thi tốt nghiệp THPT môn Tiếng Anh — cấu trúc 2025 (Chương trình GDPT 2018):
-// 40 câu trắc nghiệm A/B/C/D, 4 dạng bài. "mini" giữ đủ 4 dạng nhưng ít câu hơn.
-function thptExamCommand(size: 20 | 40): string {
+// Đề thi thử: GIỮ cấu trúc đề tốt nghiệp THPT 2025 nhưng nội dung/chủ đề được random
+// hoá mỗi lần + chọn được độ khó (một loại đề duy nhất, không tách THPT vs tổng hợp).
+export function examCommand(size: 20 | 40, difficulty: ExamDifficulty = 2): string {
   const full = size === 40;
-  const c1 = full ? 12 : 6; // điền vào thông báo/quảng cáo/đoạn văn
-  const c2 = full ? 5 : 4; //  sắp xếp câu thành đoạn/hội thoại
-  const c3 = full ? 5 : 4; //  điền câu/đoạn còn thiếu vào đoạn văn
-  const rc = full ? [8, 10] : [3, 3]; // đọc hiểu: 2 bài
-  const total = c1 + c2 + c3 + rc.reduce((a, b) => a + b, 0);
+  const c1 = full ? 12 : 6;
+  const c2 = full ? 5 : 4;
+  const c3 = full ? 5 : 4;
+  const rc = full ? [8, 10] : [3, 3];
+  const total = c1 + c2 + c3 + rc[0] + rc[1];
+  const diff = EXAM_DIFFICULTY[difficulty] ?? EXAM_DIFFICULTY[2];
   return [
     `Tạo một đề thi thử môn Tiếng Anh theo ĐÚNG cấu trúc đề tốt nghiệp THPT Quốc gia Việt Nam 2025 (Chương trình GDPT 2018). Toàn bộ là câu hỏi trắc nghiệm 4 đáp án A/B/C/D.`,
     `Gồm ${total} câu, chia thành các "sections" theo 4 dạng bài:`,
@@ -163,8 +144,8 @@ function thptExamCommand(size: 20 | 40): string {
     `2) Sắp xếp thứ tự các câu thành đoạn văn/lá thư/hội thoại hoàn chỉnh — ${c2} câu. Đặt các mệnh đề a), b), c), d)… vào "passage" dưới dạng DANH SÁCH MARKDOWN, MỖI mệnh đề một dòng bắt đầu bằng "- " (ví dụ: "- a) ...\\n- b) ..."). "options" là các thứ tự ví dụ "b-a-d-c".`,
     `3) Hoàn thành đoạn văn bằng các câu/đoạn còn thiếu — ${c3} câu (đoạn văn có chỗ trống đánh số trong "passage", option là các câu ứng viên).`,
     `4) Đọc hiểu — 2 bài đọc (mỗi bài đặt văn bản vào "passage"): bài 1 có ${rc[0]} câu, bài 2 có ${rc[1]} câu.`,
-    `Mức độ tư duy: ~40% nhận biết, 30% thông hiểu, 30% vận dụng.`,
-    `Đa dạng hoá chủ đề/ngữ cảnh các đoạn văn & câu hỏi (tránh trùng lặp giữa các đề) — xoay quanh những chủ đề như: ${sampleTopics(6)}.`,
+    `Độ khó: ${diff.label} — ${diff.hint}.`,
+    `RANDOM HOÁ mỗi đề: đa dạng chủ đề/ngữ cảnh các đoạn văn & câu hỏi (tránh trùng lặp giữa các lần) — xoay quanh những chủ đề như: ${sampleTopics(6)}; trộn thêm câu về từ vựng/collocation cho phong phú.`,
     `CHỈ trả về một JSON object hợp lệ theo schema sau — KHÔNG markdown, KHÔNG văn bản ngoài JSON:`,
     EXAM_SCHEMA,
     `Mỗi câu hỏi đúng 4 "options" (chỉ nội dung, không tiền tố "A."/"B."), "correct" là index 0-3, "explain" tiếng Việt ngắn gọn.`,

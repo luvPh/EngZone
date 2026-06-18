@@ -34,6 +34,10 @@ function write(list: PoolWord[]) {
 }
 
 const norm = (w: string) => w.trim().toLowerCase();
+const cap = (w: string) => {
+  const t = w.trim();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+};
 
 /** Add vocab to the pool (dedupe by word; enrich missing ipa/example/example). */
 export function addVocab(items: VocabItem[], source?: string): void {
@@ -48,7 +52,7 @@ export function addVocab(items: VocabItem[], source?: string): void {
       if (!existing.example && it.example) existing.example = it.example;
     } else {
       byWord.set(k, {
-        word: it.word.trim(),
+        word: cap(it.word),
         meaning: it.meaning.trim(),
         ipa: it.ipa,
         example: it.example,

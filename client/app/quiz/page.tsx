@@ -9,7 +9,7 @@ import ModelSelector from "@/components/ModelSelector";
 import { useModel } from "@/lib/modelConfig";
 import { useFeatureState } from "@/lib/store";
 import { runCommand } from "@/lib/stream";
-import { examCommand, type ExamVariant } from "@/lib/prompts";
+import { examCommand, type ExamDifficulty } from "@/lib/prompts";
 import { extractJson } from "@/lib/extractJson";
 import { recordActivity } from "@/lib/storage";
 import { findItem, saveItem } from "@/lib/library";
@@ -29,14 +29,11 @@ interface ExamRun {
 
 const KEY = "quiz";
 
-const VARIANT_LABEL: Record<ExamVariant, string> = {
-  thpt: "Đề thi THPT",
-  mixed: "Đề tổng hợp",
-};
+const DIFF_LABEL: Record<ExamDifficulty, string> = { 1: "Dễ", 2: "Trung bình", 3: "Khó" };
 
 export default function QuizPage() {
   const [model, setModel] = useModel("quiz");
-  const [examType, setExamType] = useFeatureState<ExamVariant>(`${KEY}:examType`, "thpt");
+  const [difficulty, setDifficulty] = useFeatureState<ExamDifficulty>(`${KEY}:difficulty`, 2);
 
   const [examRun, setExamRun] = useFeatureState<ExamRun>(`${KEY}:examRun`, {
     loading: false,
@@ -81,13 +78,12 @@ export default function QuizPage() {
   const generateExam = (forceNew = false) => {
     if (examRun.loading) return;
     const size = examRun.size;
-    const variant = examType;
-    const cacheTopic = VARIANT_LABEL[variant];
+    const cacheTopic = "Đề thi THPT";
     setExamState({ answers: {}, submitted: false });
     setSession({ started: false, endsAt: 0 });
     setNavLocked(false);
 
-    const meta = { kind: "exam", size, variant };
+    const meta = { kind: "exam", size, difficulty };
     const base = { size, startedAt: 0, bytes: 0 };
     if (!forceNew) {
       const cached = findItem("quiz", cacheTopic, undefined, meta);
@@ -105,7 +101,7 @@ export default function QuizPage() {
 
     runCommand(
       KEY,
-      examCommand(size, variant),
+      examCommand(size, difficulty),
       {
         onText: (full) => setExamRun((p) => (p.loading ? { ...p, bytes: full.length } : p)),
         onDone: (full) => {
@@ -119,7 +115,7 @@ export default function QuizPage() {
             feature: "quiz",
             topic: cacheTopic,
             meta,
-            title: `${cacheTopic} · ${size} câu`,
+            title: `Đề thi THPT · ${size} câu · ${DIFF_LABEL[difficulty]}`,
             content: JSON.stringify(exam),
           });
         },
@@ -141,23 +137,23 @@ export default function QuizPage() {
       {!testInProgress && (
         <>
           <Card>
+            <p className="text-sm text-muted mb-4">
+              Theo cấu trúc đề tốt nghiệp THPT 2025 (4 dạng: điền thông tin · sắp xếp câu ·
+              điền câu thiếu · đọc hiểu) — nội dung & chủ đề được random hoá mỗi lần để luyện đa dạng.
+            </p>
+
             <div className="mb-4">
-              <div className="text-sm font-medium text-slate-300 mb-1.5">Loại đề</div>
+              <div className="text-sm font-medium text-slate-300 mb-1.5">Độ khó</div>
               <Segmented
-                value={examType}
-                onChange={setExamType}
+                value={difficulty}
+                onChange={setDifficulty}
                 options={[
-                  { value: "thpt", label: "THPT 2025" },
-                  { value: "mixed", label: "Tổng hợp ngẫu nhiên" },
+                  { value: 1, label: "Dễ" },
+                  { value: 2, label: "Trung bình" },
+                  { value: 3, label: "Khó" },
                 ]}
               />
             </div>
-
-            <p className="text-sm text-muted mb-4">
-              {examType === "thpt"
-                ? "Theo cấu trúc tốt nghiệp THPT 2025: 4 dạng (điền thông tin · sắp xếp câu · điền câu thiếu · đọc hiểu), chủ đề được đa dạng hoá mỗi lần."
-                : "Đề tổng hợp: trộn ngữ pháp + từ vựng + cloze + đọc hiểu trên các chủ đề ngẫu nhiên, không bám một kỳ thi cố định."}
-            </p>
 
             <div className="mb-4">
               <div className="text-sm font-medium text-slate-300 mb-1.5">Độ dài</div>
