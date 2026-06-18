@@ -137,7 +137,7 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
 
       <div
         ref={scroller}
-        className="flex gap-5 overflow-x-auto snap-x snap-mandatory px-[19%] sm:px-[30%] py-14 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex items-start gap-5 overflow-x-auto snap-x snap-mandatory px-[19%] sm:px-[30%] py-14 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {themes.map((t, i) => {
           const p = PALETTES[i % PALETTES.length];
@@ -151,7 +151,7 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
               }}
               type="button"
               onClick={() => (isActive ? onOpen(t.category) : centerCard(i))}
-              className={`flex-none w-[62%] sm:w-[40%] aspect-[2/3] snap-center flex flex-col text-left rounded-[28px] p-5 transition-all duration-300 ease-out ${
+              className={`flex-none w-[min(360px,74vw)] aspect-[2/3] snap-center flex flex-col text-left rounded-[28px] p-5 transition-all duration-300 ease-out ${
                 isActive
                   ? "scale-100 opacity-100"
                   : "scale-[0.85] opacity-55 brightness-[0.55] saturate-[0.8]"
