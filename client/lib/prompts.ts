@@ -99,7 +99,7 @@ const ESSAY_MIN_WORDS: Record<number, number> = { 1: 100, 2: 200, 3: 300, 4: 400
 export function essayCommand(topic: string, level: number): string {
   const minWords = ESSAY_MIN_WORDS[level] ?? 300;
   const schema =
-    '{"essay":"toàn bộ bài essay (có thể nhiều đoạn, ngăn cách bằng \\n\\n)","vocab":[{"word":"MỘT từ đơn tiếng Anh","pos":"loại từ: noun/verb/adjective/adverb…","ipa":"phiên âm /.../","meaning":"nghĩa tiếng Việt tự nhiên","example":"câu ví dụ tiếng Anh dùng từ này"}]}';
+    '{"essay":"toàn bộ bài essay (có thể nhiều đoạn, ngăn cách bằng \\n\\n)","vocab":[{"word":"MỘT từ đơn tiếng Anh","pos":"loại từ: noun/verb/adjective/adverb…","ipa":"phiên âm /.../","meaning":"nghĩa tiếng Việt tự nhiên","example":"câu ví dụ tiếng Anh dùng từ này"}],"families":[{"root":"từ gốc","members":[{"word":"dạng từ","pos":"noun/verb/adjective/adverb","meaning":"nghĩa tiếng Việt"}]}]}';
   return [
     `/essay ${topic} ${level}`,
     "",
@@ -107,6 +107,7 @@ export function essayCommand(topic: string, level: number): string {
     `CHỈ trả về một JSON object hợp lệ — KHÔNG markdown, KHÔNG văn bản ngoài JSON:`,
     schema,
     `"vocab": 8-12 TỪ ĐƠN quan trọng XUẤT HIỆN trong bài — mỗi mục PHẢI là MỘT từ duy nhất (TUYỆT ĐỐI không cụm từ, từ ghép nhiều chữ, hay phrasal verb), KHÔNG trùng lặp; kèm "pos" (loại từ), "ipa", "meaning" (tiếng Việt), "example".`,
+    `"families": với những từ trong "vocab" CÓ họ từ rõ ràng (≥2 dạng khác loại từ: danh/động/tính/trạng), thêm 1 family gồm "root" + "members" (mỗi member: từ đơn + "pos" + "meaning"). Mỗi member cũng là TỪ ĐƠN. Chỉ thêm họ từ CÓ THẬT; từ nào không có họ thì bỏ qua. Nếu không có family nào thì để "families": [].`,
     `KHÔNG kèm structure, comprehension questions, hay writing prompt.`,
   ].join("\n");
 }

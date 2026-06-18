@@ -39,9 +39,16 @@ export interface VocabItem {
   example?: string;
 }
 
+export interface FamilyMemberItem {
+  word: string;
+  pos: string;
+  meaning?: string;
+}
+
 export interface Essay {
   essay: string;
   vocab: VocabItem[];
+  families?: { root: string; members: FamilyMemberItem[] }[];
 }
 
 export interface ExamQuestion {

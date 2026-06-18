@@ -15,6 +15,7 @@ import { recordActivity } from "@/lib/storage";
 import { findItem, saveItem } from "@/lib/library";
 import { randomTopic } from "@/lib/topicPool";
 import { addVocab } from "@/lib/vocabPool";
+import { addFamilies } from "@/lib/wordFamily";
 import type { Essay } from "@/lib/types";
 
 interface Inputs {
@@ -66,6 +67,7 @@ export default function EssayPage() {
       if (cached) {
         const essay = parseEssay(cached.content);
         if (essay?.vocab?.length) addVocab(essay.vocab, topic);
+        if (essay?.families?.length) addFamilies(essay.families);
         setRun({
           loading: false,
           error: "",
@@ -91,6 +93,7 @@ export default function EssayPage() {
         }
         setRun({ loading: false, error: "", essay, raw: "", source: "new", topic });
         if (essay.vocab?.length) addVocab(essay.vocab, topic);
+        if (essay.families?.length) addFamilies(essay.families);
         saveItem({
           feature: "essay",
           topic,
