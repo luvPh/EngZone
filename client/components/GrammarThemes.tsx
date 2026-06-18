@@ -63,36 +63,71 @@ export default function GrammarThemes() {
 
 function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
   const [themes, setThemes] = useState<{ category: string; total: number; learned: number }[]>([]);
-  const [active, setActive] = useState(0);
+  const [activeLoop, setActiveLoop] = useState(0); // loop index (0..3N-1) at centre
   const scroller = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const centerRef = useRef(0); // same as activeLoop, readable synchronously
+  const idleTimer = useRef<number | null>(null);
 
   useEffect(() => setThemes(getCategories()), []);
 
-  // Active = card whose centre is nearest the scroller's centre (viewport coords).
+  const N = themes.length;
+  // Triple the themes so the carousel can loop seamlessly in both directions.
+  const loop = N ? [...themes, ...themes, ...themes] : [];
+
+  const scrollToCard = (loopIdx: number, smooth = true) => {
+    const sc = scroller.current;
+    const el = cardRefs.current[loopIdx];
+    if (!sc || !el) return;
+    const r = el.getBoundingClientRect();
+    const s = sc.getBoundingClientRect();
+    sc.scrollBy({
+      left: r.left + r.width / 2 - (s.left + s.width / 2),
+      behavior: smooth ? "smooth" : "auto",
+    });
+  };
+
+  // Start centred on the first card of the MIDDLE copy.
+  useEffect(() => {
+    if (!N) return;
+    const id = requestAnimationFrame(() => scrollToCard(N, false));
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [N]);
+
+  // Track centre card; when scrolling settles inside a clone copy, jump by one
+  // set to the equivalent middle-copy card (instant) → seamless infinite loop.
   useEffect(() => {
     const sc = scroller.current;
-    if (!sc) return;
+    if (!sc || !N) return;
     let raf = 0;
     const recompute = () => {
-      const scRect = sc.getBoundingClientRect();
-      const center = scRect.left + scRect.width / 2;
+      const s = sc.getBoundingClientRect();
+      const c = s.left + s.width / 2;
       let best = 0;
       let bestD = Infinity;
       cardRefs.current.forEach((el, i) => {
         if (!el) return;
         const r = el.getBoundingClientRect();
-        const d = Math.abs(r.left + r.width / 2 - center);
+        const d = Math.abs(r.left + r.width / 2 - c);
         if (d < bestD) {
           bestD = d;
           best = i;
         }
       });
-      setActive(best);
+      centerRef.current = best;
+      setActiveLoop(best);
+    };
+    const settle = () => {
+      const i = centerRef.current;
+      if (i < N) scrollToCard(i + N, false);
+      else if (i >= 2 * N) scrollToCard(i - N, false);
     };
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(recompute);
+      if (idleTimer.current) window.clearTimeout(idleTimer.current);
+      idleTimer.current = window.setTimeout(settle, 140);
     };
     sc.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", recompute);
@@ -101,20 +136,25 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
       sc.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", recompute);
       cancelAnimationFrame(raf);
+      if (idleTimer.current) window.clearTimeout(idleTimer.current);
     };
-  }, [themes.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [N]);
 
-  const centerCard = (i: number) =>
-    cardRefs.current[Math.max(0, Math.min(themes.length - 1, i))]?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
-
-  // Loop navigation: wrap around the ends.
-  const go = (dir: number) => {
-    if (themes.length === 0) return;
-    centerCard((active + dir + themes.length) % themes.length);
+  const go = (dir: number) => scrollToCard(centerRef.current + dir, true);
+  // Centre the copy of theme `real` nearest the current position.
+  const goToReal = (real: number) => {
+    const cands = [real, real + N, real + 2 * N];
+    let best = cands[0];
+    let bestD = Infinity;
+    for (const ci of cands) {
+      const d = Math.abs(ci - centerRef.current);
+      if (d < bestD) {
+        bestD = d;
+        best = ci;
+      }
+    }
+    scrollToCard(best, true);
   };
 
   return (
@@ -143,18 +183,19 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
         ref={scroller}
         className="flex items-start gap-5 overflow-x-auto snap-x snap-mandatory px-[19%] sm:px-[30%] py-14 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {themes.map((t, i) => {
-          const p = PALETTES[i % PALETTES.length];
+        {loop.map((t, i) => {
+          const real = i % N;
+          const p = PALETTES[real % PALETTES.length];
           const pct = t.total > 0 ? Math.round((t.learned / t.total) * 100) : 0;
-          const isActive = i === active;
+          const isActive = i === activeLoop;
           return (
             <button
-              key={t.category}
+              key={i}
               ref={(el) => {
                 cardRefs.current[i] = el;
               }}
               type="button"
-              onClick={() => (isActive ? onOpen(t.category) : centerCard(i))}
+              onClick={() => (isActive ? onOpen(t.category) : scrollToCard(i))}
               className={`flex-none w-[min(360px,74vw)] aspect-[2/3] snap-center flex flex-col text-left rounded-[28px] p-5 transition-all duration-300 ease-out ${
                 isActive
                   ? "theme-glow scale-100 opacity-100"
@@ -205,9 +246,9 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
             key={t.category}
             type="button"
             aria-label={CATEGORY_VI[t.category] ?? t.category}
-            onClick={() => centerCard(i)}
+            onClick={() => goToReal(i)}
             className={`h-[7px] rounded-full transition-all ${
-              i === active ? "w-6 bg-accent" : "w-[7px] bg-white/25"
+              i === activeLoop % N ? "w-6 bg-accent" : "w-[7px] bg-white/25"
             }`}
           />
         ))}
