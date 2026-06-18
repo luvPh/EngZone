@@ -24,6 +24,7 @@ export default function EssayView({ data }: { data: Essay }) {
               <li key={i} className="py-2.5">
                 <div className="flex flex-wrap items-baseline gap-x-2">
                   <span className="font-semibold text-white">{v.word}</span>
+                  {v.pos && <span className="text-xs text-muted">({v.pos})</span>}
                   {v.ipa && <span className="text-xs text-accent-soft">{v.ipa}</span>}
                   <span className="text-slate-300 text-[15px]">· {v.meaning}</span>
                 </div>

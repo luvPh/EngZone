@@ -122,23 +122,27 @@ export function Segmented<T extends string | number>({
   options,
   value,
   onChange,
+  fullWidth = false,
 }: {
   options: { value: T; label: ReactNode }[];
   value: T;
   onChange: (v: T) => void;
+  fullWidth?: boolean;
 }) {
   return (
-    <div className="inline-flex rounded-xl glass-input p-1 gap-1">
+    <div
+      className={`rounded-xl glass-input p-1 gap-1 ${
+        fullWidth ? "flex w-full" : "inline-flex max-w-full flex-wrap"
+      }`}
+    >
       {options.map((o) => (
         <button
           key={String(o.value)}
           type="button"
           onClick={() => onChange(o.value)}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition ${
-            value === o.value
-              ? "bg-accent text-white"
-              : "text-muted hover:text-white"
-          }`}
+          className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+            fullWidth ? "flex-1" : ""
+          } ${value === o.value ? "bg-accent text-white" : "text-muted hover:text-white"}`}
         >
           {o.label}
         </button>

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Check, X, ArrowRight } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
-import { distractors, recordResult, MASTER_AT, type PoolWord } from "@/lib/vocabPool";
+import { distractors, recordResult, MASTER_AT, ALL_MODES, type PoolWord } from "@/lib/vocabPool";
 
 type Mode = "mcq-word" | "mcq-meaning" | "fill";
 
@@ -16,11 +16,11 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// "resilient" → "r ‧ ‧ ‧ ‧ ‧ ‧ ‧ ‧" (keep first letter + spaces, blank the rest).
+// "resilient" → "‧ ‧ ‧ ‧ ‧ ‧ ‧ ‧ ‧" — chỉ gợi ý SỐ KÝ TỰ, không lộ chữ cái đầu.
 function charHint(word: string): string {
   return word
     .split("")
-    .map((ch, i) => (i === 0 ? ch : ch === " " ? " " : "‧"))
+    .map((ch) => (ch === " " ? " " : "‧"))
     .join(" ");
 }
 
@@ -65,7 +65,7 @@ export default function VocabPractice({
     if (result !== null) return;
     setResult(ok);
     if (ok) setCorrectCount((c) => c + 1);
-    recordResult(w.word, ok);
+    recordResult(w.word, q.mode, ok);
   };
 
   const onMcq = (chosen: PoolWord) => {
@@ -176,13 +176,24 @@ export default function VocabPractice({
             </div>
             <div className="text-sm text-slate-300 mt-1">
               <span className="font-semibold text-white">{w.word}</span>
+              {w.pos && <span className="text-xs text-muted"> ({w.pos})</span>}
               {w.ipa && <span className="text-accent-soft"> {w.ipa}</span>} · {w.meaning}
             </div>
             {w.example && <p className="text-sm text-muted italic mt-1">{w.example}</p>}
-            <div className="text-xs text-muted mt-1">
-              Đúng {Math.min(w.correct + (result ? 1 : 0), MASTER_AT)}/{MASTER_AT}
-              {result && w.correct + 1 >= MASTER_AT ? " · đã thuộc 🎉" : ""}
-            </div>
+            {(() => {
+              const c = Math.min(w.correct + (result ? 1 : 0), MASTER_AT);
+              const modes = result
+                ? Array.from(new Set([...(w.modes || []), q.mode]))
+                : w.modes || [];
+              const nModes = modes.filter((m) => ALL_MODES.includes(m)).length;
+              const done = c >= MASTER_AT && nModes >= ALL_MODES.length;
+              return (
+                <div className="text-xs text-muted mt-1">
+                  Đúng {c}/{MASTER_AT} · dạng {nModes}/{ALL_MODES.length}
+                  {done ? " · đã thuộc 🎉" : ""}
+                </div>
+              );
+            })()}
             <Button onClick={next} className="mt-3">
               {isLast ? "Xem kết quả" : "Câu tiếp"} <ArrowRight size={16} />
             </Button>

@@ -142,42 +142,51 @@ export default function QuizPage() {
               điền câu thiếu · đọc hiểu) — nội dung & chủ đề được random hoá mỗi lần để luyện đa dạng.
             </p>
 
-            <div className="mb-4">
-              <div className="text-sm font-medium text-slate-300 mb-1.5">Độ khó</div>
-              <Segmented
-                value={difficulty}
-                onChange={setDifficulty}
-                options={[
-                  { value: 1, label: "Dễ" },
-                  { value: 2, label: "Trung bình" },
-                  { value: 3, label: "Khó" },
-                ]}
-              />
+            <div className="flex flex-col lg:flex-row gap-5">
+              <div className="flex-1 min-w-0 space-y-4">
+                <div>
+                  <div className="text-sm font-medium text-slate-300 mb-1.5">Độ khó</div>
+                  <Segmented
+                    value={difficulty}
+                    onChange={setDifficulty}
+                    options={[
+                      { value: 1, label: "Dễ" },
+                      { value: 2, label: "Trung bình" },
+                      { value: 3, label: "Khó" },
+                    ]}
+                  />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-slate-300 mb-1.5">Độ dài</div>
+                  <Segmented
+                    value={examRun.size}
+                    onChange={(size) => setExamRun({ ...examRun, size })}
+                    options={[
+                      { value: 20, label: "Rút gọn (~20 câu)" },
+                      { value: 40, label: "Đầy đủ (40 câu)" },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => generateExam(false)}
+                disabled={examRun.loading}
+                className="lg:w-48 shrink-0 rounded-2xl px-5 py-4 min-h-[120px] lg:min-h-0 flex flex-col items-center justify-center gap-2 font-bold text-white bg-gradient-to-br from-accent to-accent-soft shadow-glow-accent hover:brightness-110 active:scale-[0.98] transition disabled:opacity-60"
+              >
+                {examRun.loading ? <Spinner className="w-6 h-6" /> : <GraduationCap size={26} />}
+                <span className="text-base">{examRun.loading ? "Đang ra đề…" : "Tạo đề"}</span>
+              </button>
             </div>
 
-            <div className="mb-4">
-              <div className="text-sm font-medium text-slate-300 mb-1.5">Độ dài</div>
-              <Segmented
-                value={examRun.size}
-                onChange={(size) => setExamRun({ ...examRun, size })}
-                options={[
-                  { value: 20, label: "Rút gọn (~20 câu)" },
-                  { value: 40, label: "Đầy đủ (40 câu)" },
-                ]}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={() => generateExam(false)} disabled={examRun.loading}>
-                {examRun.loading ? <Spinner /> : <GraduationCap size={18} />}
-                {examRun.loading ? "Đang ra đề…" : "Tạo đề"}
-              </Button>
-              {examRun.exam && !examRun.loading && (
+            {examRun.exam && !examRun.loading && (
+              <div className="mt-3">
                 <Button variant="ghost" onClick={() => generateExam(true)}>
                   <RefreshCw size={16} /> Đề khác
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
           </Card>
 
           {examRun.source === "library" && examRun.exam && (

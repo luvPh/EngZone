@@ -93,15 +93,20 @@ export function flashCommand(
   return lines.join("\n");
 }
 
+// Số từ tối thiểu cho essay theo độ khó 1→5.
+const ESSAY_MIN_WORDS: Record<number, number> = { 1: 100, 2: 200, 3: 300, 4: 400, 5: 500 };
+
 export function essayCommand(topic: string, level: number): string {
+  const minWords = ESSAY_MIN_WORDS[level] ?? 300;
   const schema =
-    '{"essay":"toàn bộ bài essay (có thể nhiều đoạn, ngăn cách bằng \\n\\n)","vocab":[{"word":"từ/cụm từ tiếng Anh","ipa":"phiên âm /.../","meaning":"nghĩa tiếng Việt tự nhiên","example":"câu ví dụ tiếng Anh dùng từ này"}]}';
+    '{"essay":"toàn bộ bài essay (có thể nhiều đoạn, ngăn cách bằng \\n\\n)","vocab":[{"word":"MỘT từ đơn tiếng Anh","pos":"loại từ: noun/verb/adjective/adverb…","ipa":"phiên âm /.../","meaning":"nghĩa tiếng Việt tự nhiên","example":"câu ví dụ tiếng Anh dùng từ này"}]}';
   return [
     `/essay ${topic} ${level}`,
     "",
+    `Viết essay TỐI THIỂU ${minWords} từ. Văn phong TỰ NHIÊN như người thật viết: có giọng cá nhân, ví dụ/chi tiết cụ thể, chuyển ý mượt mà; TRÁNH lối viết máy móc, sáo rỗng, lặp khuôn mẫu hay liệt kê cứng nhắc kiểu AI.`,
     `CHỈ trả về một JSON object hợp lệ — KHÔNG markdown, KHÔNG văn bản ngoài JSON:`,
     schema,
-    `"essay": bài hoàn chỉnh. "vocab": 8-12 từ/cụm quan trọng XUẤT HIỆN trong bài, mỗi từ kèm "ipa" (phiên âm), "meaning" (nghĩa tiếng Việt) và "example" (một câu ví dụ tiếng Anh).`,
+    `"vocab": 8-12 TỪ ĐƠN quan trọng XUẤT HIỆN trong bài — mỗi mục PHẢI là MỘT từ duy nhất (TUYỆT ĐỐI không cụm từ, từ ghép nhiều chữ, hay phrasal verb), KHÔNG trùng lặp; kèm "pos" (loại từ), "ipa", "meaning" (tiếng Việt), "example".`,
     `KHÔNG kèm structure, comprehension questions, hay writing prompt.`,
   ].join("\n");
 }
@@ -139,6 +144,7 @@ export function examCommand(size: 20 | 40, difficulty: ExamDifficulty = 2): stri
   const diff = EXAM_DIFFICULTY[difficulty] ?? EXAM_DIFFICULTY[2];
   return [
     `Tạo một đề thi thử môn Tiếng Anh theo ĐÚNG cấu trúc đề tốt nghiệp THPT Quốc gia Việt Nam 2025 (Chương trình GDPT 2018). Toàn bộ là câu hỏi trắc nghiệm 4 đáp án A/B/C/D.`,
+    `BẮT BUỘC: tổng số câu hỏi (đếm tất cả "questions" trong mọi "sections") phải CHÍNH XÁC bằng ${total} — không thiếu, không thừa.`,
     `Gồm ${total} câu, chia thành các "sections" theo 4 dạng bài:`,
     `1) Hoàn thành nội dung (quảng cáo/thông báo/tờ rơi hoặc đoạn văn có chỗ trống) — ${c1} câu.`,
     `2) Sắp xếp thứ tự các câu thành đoạn văn/lá thư/hội thoại hoàn chỉnh — ${c2} câu. Đặt các mệnh đề a), b), c), d)… vào "passage" dưới dạng DANH SÁCH MARKDOWN, MỖI mệnh đề một dòng bắt đầu bằng "- " (ví dụ: "- a) ...\\n- b) ..."). "options" là các thứ tự ví dụ "b-a-d-c".`,

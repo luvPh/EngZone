@@ -9,15 +9,19 @@ import type { VocabItem } from "./types";
 export interface PoolWord {
   word: string;
   meaning: string;
+  pos?: string;
   ipa?: string;
   example?: string;
   correct: number; // cumulative correct answers
+  modes: string[]; // distinct test modes answered correctly
   mastered: boolean;
   source?: string; // e.g. essay topic
   addedAt: number;
 }
 
-export const MASTER_AT = 3;
+// A word is "mastered" only after 5 correct answers spanning all 3 test modes.
+export const MASTER_AT = 5;
+export const ALL_MODES = ["mcq-word", "mcq-meaning", "fill"];
 const KEY = "engzone:vocab:v1";
 
 function read(): PoolWord[] {
@@ -45,18 +49,23 @@ export function addVocab(items: VocabItem[], source?: string): void {
   const byWord = new Map(list.map((e) => [norm(e.word), e]));
   for (const it of items) {
     if (!it?.word?.trim() || !it?.meaning?.trim()) continue;
+    // Single words only — skip compounds / multi-word / phrasal verbs.
+    if (/\s/.test(it.word.trim())) continue;
     const k = norm(it.word);
     const existing = byWord.get(k);
     if (existing) {
       if (!existing.ipa && it.ipa) existing.ipa = it.ipa;
       if (!existing.example && it.example) existing.example = it.example;
+      if (!existing.pos && it.pos) existing.pos = it.pos;
     } else {
       byWord.set(k, {
         word: cap(it.word),
         meaning: it.meaning.trim(),
+        pos: it.pos,
         ipa: it.ipa,
         example: it.example,
         correct: 0,
+        modes: [],
         mastered: false,
         source,
         addedAt: Date.now(),
@@ -86,14 +95,18 @@ export function studyBatch(size: number): PoolWord[] {
   return pool.slice(0, size);
 }
 
-/** Record a practice result; 3 cumulative correct answers → mastered. */
-export function recordResult(word: string, correct: boolean): void {
+/** Record a practice result. Mastered = ≥5 correct AND all 3 modes answered right. */
+export function recordResult(word: string, mode: string, correct: boolean): void {
   const list = read();
   const e = list.find((x) => norm(x.word) === norm(word));
   if (!e) return;
+  if (!Array.isArray(e.modes)) e.modes = [];
   if (correct) {
     e.correct += 1;
-    if (e.correct >= MASTER_AT) e.mastered = true;
+    if (!e.modes.includes(mode)) e.modes.push(mode);
+    if (e.correct >= MASTER_AT && ALL_MODES.every((m) => e.modes.includes(m))) {
+      e.mastered = true;
+    }
   }
   write(list);
 }
@@ -109,7 +122,7 @@ export function distractors(word: string, n = 3): PoolWord[] {
 }
 
 export function resetMastery(): void {
-  const list = read().map((e) => ({ ...e, correct: 0, mastered: false }));
+  const list = read().map((e) => ({ ...e, correct: 0, modes: [], mastered: false }));
   write(list);
 }
 

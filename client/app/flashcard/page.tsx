@@ -112,6 +112,7 @@ export default function PracticePage() {
               <>
                 <div className="text-sm font-medium text-slate-300 mb-1.5">Số từ mỗi lượt</div>
                 <Segmented
+                  fullWidth
                   value={size}
                   onChange={(v) => setSize(v)}
                   options={[
