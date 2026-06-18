@@ -161,7 +161,7 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
   };
 
   return (
-    <div className="animate-fade-up">
+    <div className="animate-fade-up min-h-[72vh] flex flex-col justify-center">
       <div className="flex items-center justify-center gap-3 mb-1">
         <button
           type="button"
@@ -184,7 +184,7 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
 
       <div
         ref={scroller}
-        className="flex items-start gap-5 overflow-x-auto snap-x snap-mandatory px-[19%] sm:px-[30%] py-14 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex items-start gap-4 overflow-x-auto snap-x snap-mandatory px-[19%] sm:px-[30%] py-12 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {loop.map((t, i) => {
           const real = i % N;
@@ -199,7 +199,7 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
               }}
               type="button"
               onClick={() => (isActive ? onOpen(t.category) : scrollToCard(i))}
-              className={`flex-none w-[min(360px,74vw)] aspect-[2/3] snap-center flex flex-col text-left rounded-[28px] p-5 transition-all duration-300 ease-out ${
+              className={`flex-none w-[min(306px,63vw)] aspect-[2/3] snap-center flex flex-col text-left rounded-[24px] p-4 transition-all duration-300 ease-out ${
                 isActive
                   ? "theme-glow scale-100 opacity-100"
                   : "scale-[0.85] opacity-55 brightness-[0.55] saturate-[0.8]"
@@ -217,7 +217,7 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
                 Chủ đề · {t.total} bài
               </div>
               <h3
-                className="font-serif font-bold text-3xl leading-[1.1] mt-2"
+                className="font-serif font-bold text-2xl leading-[1.1] mt-2"
                 style={{ color: p.ink }}
               >
                 {CATEGORY_VI[t.category] ?? t.category}
