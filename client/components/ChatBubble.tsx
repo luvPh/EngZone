@@ -22,7 +22,7 @@ const SUGGESTIONS = [
 ];
 
 const BUBBLE = 56; // px
-const DRAG_THRESHOLD = 5; // px before a press counts as a drag (vs a tap)
+const DRAG_THRESHOLD = 10; // px before a press counts as a drag (vs a tap)
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, v));
@@ -47,6 +47,8 @@ export default function ChatBubble() {
     startY: number;
     moved: boolean;
   } | null>(null);
+  // True right after a drag so the trailing click doesn't also open the panel.
+  const draggedRef = useRef(false);
 
   // Default to the bottom-right corner once we can read the viewport.
   useEffect(() => {
@@ -70,7 +72,13 @@ export default function ChatBubble() {
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (!pos) return;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    // Capture on the button itself (currentTarget), not the inner <svg> — capturing
+    // on a child that can re-render drops the pointer stream and breaks tap on touch.
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* capture unsupported — taps still work via pointerup */
+    }
     drag.current = {
       offX: e.clientX - pos.x,
       offY: e.clientY - pos.y,
@@ -95,9 +103,21 @@ export default function ChatBubble() {
     });
   };
   const onPointerUp = () => {
-    const moved = drag.current?.moved;
+    // Remember whether this gesture was a drag; the trailing click reads it.
+    draggedRef.current = !!drag.current?.moved;
     drag.current = null;
-    if (!moved) setOpen(true); // a tap (not a drag) opens the chat
+  };
+  const onPointerCancel = () => {
+    draggedRef.current = false;
+    drag.current = null;
+  };
+  // Open on click (most reliable for taps across mouse + touch); skip if dragging.
+  const onBubbleClick = () => {
+    if (draggedRef.current) {
+      draggedRef.current = false;
+      return;
+    }
+    setOpen(true);
   };
 
   const send = (text: string) => {
@@ -158,7 +178,7 @@ export default function ChatBubble() {
         } ${hidden ? "translate-y-4" : ""}`}
       >
         <div
-          className="flex flex-col glass rounded-2xl shadow-card overflow-hidden"
+          className="flex flex-col reading-surface rounded-2xl shadow-card-deep overflow-hidden"
           style={{ height: panelH }}
         >
           <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border bg-surface-2">
@@ -244,6 +264,8 @@ export default function ChatBubble() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onClick={onBubbleClick}
         style={{ left: pos.x, top: pos.y, width: BUBBLE, height: BUBBLE, touchAction: "none" }}
         className={`fixed z-40 rounded-full bg-gradient-to-br from-accent to-accent-soft text-white grid place-items-center shadow-lg shadow-accent/30 transition-[opacity,transform] duration-300 hover:brightness-110 active:cursor-grabbing cursor-grab ${
           open || hidden

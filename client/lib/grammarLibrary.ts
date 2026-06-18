@@ -92,6 +92,22 @@ export function getLevelLessons(level: string): StoredLesson[] {
   return getAllLessons().filter((l) => l.level === level);
 }
 
+/** Lessons of one theme (category), across all levels, in seed order. */
+export function getCategoryLessons(category: string): StoredLesson[] {
+  return getAllLessons().filter((l) => l.category === category);
+}
+
+/** Distinct categories (themes) in first-appearance order, with progress. */
+export function getCategories(): { category: string; total: number; learned: number }[] {
+  const all = getAllLessons();
+  const order: string[] = [];
+  for (const l of all) if (!order.includes(l.category)) order.push(l.category);
+  return order.map((category) => {
+    const items = all.filter((l) => l.category === category);
+    return { category, total: items.length, learned: items.filter((l) => l.learned).length };
+  });
+}
+
 /** Previous/next lesson within the same level (seed order). */
 export function getLessonNeighbors(slug: string): {
   prev: StoredLesson | null;

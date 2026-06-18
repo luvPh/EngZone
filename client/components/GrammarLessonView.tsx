@@ -151,7 +151,7 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
 
       <div className="flex flex-wrap gap-2 mb-1">
         <Button variant={learned ? "primary" : "ghost"} onClick={toggleLearned}>
-          <Check size={16} /> {learned ? "Đã học ✓" : "Đánh dấu đã học"}
+          <Check size={16} /> {learned ? "Đã học" : "Đánh dấu đã học"}
         </Button>
         <Button variant="ghost" onClick={() => runGen(lesson, true)} disabled={loading}>
           <RefreshCw size={16} /> Tạo lại

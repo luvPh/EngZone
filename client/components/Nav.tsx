@@ -17,10 +17,10 @@ import { useFeatureState } from "@/lib/store";
 
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/quiz", label: "Quiz", icon: ListChecks },
+  { href: "/quiz", label: "Luyện đề", icon: ListChecks },
   { href: "/essay", label: "Essay", icon: FileText },
   { href: "/grammar", label: "Grammar", icon: BookOpen },
-  { href: "/flashcard", label: "Cards", icon: Layers },
+  { href: "/flashcard", label: "Luyện từ", icon: Layers },
   { href: "/check", label: "Check", icon: SpellCheck },
   { href: "/library", label: "Library", icon: Library },
 ];
@@ -37,7 +37,7 @@ export default function Nav() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col md:w-60 md:shrink-0 border-r border-white/10 glass-nav p-4 gap-1">
+      <aside className="hidden md:flex md:flex-col md:w-64 lg:w-72 md:shrink-0 border-r border-white/10 glass-nav p-4 gap-1">
         <div className="flex items-center gap-2 px-2 py-3 mb-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-soft grid place-items-center text-white font-bold">
             E

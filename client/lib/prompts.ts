@@ -2,6 +2,8 @@
 // skill's `/command` semantics but append constraints so the UI gets exactly
 // what it needs (JSON for quiz/flashcard, trimmed essay, no trailing tips).
 
+import { TOPIC_POOL } from "./topicPool";
+
 const NO_SUGGEST =
   "Không thêm phần gợi ý lệnh khác (ví dụ /quiz, /check, /flash) ở cuối câu trả lời.";
 
@@ -91,40 +93,67 @@ export function flashCommand(
   return lines.join("\n");
 }
 
+// Số từ tối thiểu cho essay theo độ khó 1→5.
+const ESSAY_MIN_WORDS: Record<number, number> = { 1: 100, 2: 200, 3: 300, 4: 400, 5: 500 };
+
 export function essayCommand(topic: string, level: number): string {
+  const minWords = ESSAY_MIN_WORDS[level] ?? 300;
   const schema =
-    '{"essay":"toàn bộ bài essay (có thể nhiều đoạn, ngăn cách bằng \\n\\n)","vocab":[{"word":"từ/cụm từ","meaning":"nghĩa tiếng Việt"}]}';
+    '{"essay":"toàn bộ bài essay (có thể nhiều đoạn, ngăn cách bằng \\n\\n)","vocab":[{"word":"MỘT từ đơn tiếng Anh","pos":"loại từ: noun/verb/adjective/adverb…","ipa":"phiên âm /.../","meaning":"nghĩa tiếng Việt tự nhiên","example":"câu ví dụ tiếng Anh dùng từ này"}]}';
   return [
     `/essay ${topic} ${level}`,
     "",
+    `Viết essay TỐI THIỂU ${minWords} từ. Văn phong TỰ NHIÊN như người thật viết: có giọng cá nhân, ví dụ/chi tiết cụ thể, chuyển ý mượt mà; TRÁNH lối viết máy móc, sáo rỗng, lặp khuôn mẫu hay liệt kê cứng nhắc kiểu AI.`,
     `CHỈ trả về một JSON object hợp lệ — KHÔNG markdown, KHÔNG văn bản ngoài JSON:`,
     schema,
-    `"essay": bài hoàn chỉnh. "vocab": 8-12 từ/cụm quan trọng kèm nghĩa tiếng Việt.`,
+    `"vocab": 8-12 TỪ ĐƠN quan trọng XUẤT HIỆN trong bài — mỗi mục PHẢI là MỘT từ duy nhất (TUYỆT ĐỐI không cụm từ, từ ghép nhiều chữ, hay phrasal verb), KHÔNG trùng lặp; kèm "pos" (loại từ), "ipa", "meaning" (tiếng Việt), "example".`,
     `KHÔNG kèm structure, comprehension questions, hay writing prompt.`,
   ].join("\n");
 }
 
-// Đề thi tốt nghiệp THPT môn Tiếng Anh — cấu trúc 2025 (Chương trình GDPT 2018):
-// 40 câu trắc nghiệm A/B/C/D, 4 dạng bài. "mini" giữ đủ 4 dạng nhưng ít câu hơn.
-export function examCommand(size: 20 | 40): string {
+const EXAM_SCHEMA =
+  '{"title":"Tên đề","sections":[{"instruction":"hướng dẫn dạng bài","passage":"văn bản/đoạn đề bài nếu có (markdown), bỏ trống nếu không cần","questions":[{"q":"câu hỏi","options":["A","B","C","D"],"correct":0,"explain":"giải thích tiếng Việt ngắn"}]}]}';
+
+// Vài chủ đề ngẫu nhiên để đa dạng hoá ngữ cảnh các đề (tránh lặp nội dung).
+function sampleTopics(n: number): string {
+  const a = [...TOPIC_POOL];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, n).join(", ");
+}
+
+export type ExamDifficulty = 1 | 2 | 3;
+
+const EXAM_DIFFICULTY: Record<ExamDifficulty, { label: string; hint: string }> = {
+  1: { label: "Dễ", hint: "từ vựng & cấu trúc cơ bản (A2–B1); ~55% nhận biết, 30% thông hiểu, 15% vận dụng" },
+  2: { label: "Trung bình", hint: "trình độ B1–B2; ~40% nhận biết, 30% thông hiểu, 30% vận dụng" },
+  3: { label: "Khó", hint: "trình độ B2–C1, từ vựng học thuật, nhiều câu suy luận; ~20% nhận biết, 35% thông hiểu, 45% vận dụng" },
+};
+
+// Đề thi thử: GIỮ cấu trúc đề tốt nghiệp THPT 2025 nhưng nội dung/chủ đề được random
+// hoá mỗi lần + chọn được độ khó (một loại đề duy nhất, không tách THPT vs tổng hợp).
+export function examCommand(size: 20 | 40, difficulty: ExamDifficulty = 2): string {
   const full = size === 40;
-  const c1 = full ? 12 : 6; // điền vào thông báo/quảng cáo/đoạn văn
-  const c2 = full ? 5 : 4; //  sắp xếp câu thành đoạn/hội thoại
-  const c3 = full ? 5 : 4; //  điền câu/đoạn còn thiếu vào đoạn văn
-  const rc = full ? [8, 10] : [3, 3]; // đọc hiểu: 2 bài
-  const total = c1 + c2 + c3 + rc.reduce((a, b) => a + b, 0);
-  const schema =
-    '{"title":"Đề thi thử Tiếng Anh THPT","sections":[{"instruction":"hướng dẫn dạng bài","passage":"văn bản/đoạn đề bài nếu có (markdown), bỏ trống nếu không cần","questions":[{"q":"câu hỏi","options":["A","B","C","D"],"correct":0,"explain":"giải thích tiếng Việt ngắn"}]}]}';
+  const c1 = full ? 12 : 6;
+  const c2 = full ? 5 : 4;
+  const c3 = full ? 5 : 4;
+  const rc = full ? [8, 10] : [3, 3];
+  const total = c1 + c2 + c3 + rc[0] + rc[1];
+  const diff = EXAM_DIFFICULTY[difficulty] ?? EXAM_DIFFICULTY[2];
   return [
     `Tạo một đề thi thử môn Tiếng Anh theo ĐÚNG cấu trúc đề tốt nghiệp THPT Quốc gia Việt Nam 2025 (Chương trình GDPT 2018). Toàn bộ là câu hỏi trắc nghiệm 4 đáp án A/B/C/D.`,
+    `BẮT BUỘC: tổng số câu hỏi (đếm tất cả "questions" trong mọi "sections") phải CHÍNH XÁC bằng ${total} — không thiếu, không thừa.`,
     `Gồm ${total} câu, chia thành các "sections" theo 4 dạng bài:`,
     `1) Hoàn thành nội dung (quảng cáo/thông báo/tờ rơi hoặc đoạn văn có chỗ trống) — ${c1} câu.`,
     `2) Sắp xếp thứ tự các câu thành đoạn văn/lá thư/hội thoại hoàn chỉnh — ${c2} câu. Đặt các mệnh đề a), b), c), d)… vào "passage" dưới dạng DANH SÁCH MARKDOWN, MỖI mệnh đề một dòng bắt đầu bằng "- " (ví dụ: "- a) ...\\n- b) ..."). "options" là các thứ tự ví dụ "b-a-d-c".`,
     `3) Hoàn thành đoạn văn bằng các câu/đoạn còn thiếu — ${c3} câu (đoạn văn có chỗ trống đánh số trong "passage", option là các câu ứng viên).`,
     `4) Đọc hiểu — 2 bài đọc (mỗi bài đặt văn bản vào "passage"): bài 1 có ${rc[0]} câu, bài 2 có ${rc[1]} câu.`,
-    `Mức độ tư duy: ~40% nhận biết, 30% thông hiểu, 30% vận dụng.`,
+    `Độ khó: ${diff.label} — ${diff.hint}.`,
+    `RANDOM HOÁ mỗi đề: đa dạng chủ đề/ngữ cảnh các đoạn văn & câu hỏi (tránh trùng lặp giữa các lần) — xoay quanh những chủ đề như: ${sampleTopics(6)}; trộn thêm câu về từ vựng/collocation cho phong phú.`,
     `CHỈ trả về một JSON object hợp lệ theo schema sau — KHÔNG markdown, KHÔNG văn bản ngoài JSON:`,
-    schema,
+    EXAM_SCHEMA,
     `Mỗi câu hỏi đúng 4 "options" (chỉ nội dung, không tiền tố "A."/"B."), "correct" là index 0-3, "explain" tiếng Việt ngắn gọn.`,
   ].join("\n");
 }

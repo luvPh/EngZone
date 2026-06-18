@@ -22,12 +22,30 @@ const FEATURES: {
   icon: LucideIcon;
   desc: string;
   key: string;
+  grad: string;
+  glow: string;
+  ink: string;
 }[] = [
-  { href: "/quiz", label: "Quiz", icon: ListChecks, desc: "Trắc nghiệm tương tác", key: "quiz" },
-  { href: "/essay", label: "Essay", icon: FileText, desc: "Essay mẫu + từ vựng", key: "essay" },
-  { href: "/grammar", label: "Grammar", icon: BookOpen, desc: "Giải thích ngữ pháp", key: "grammar" },
-  { href: "/flashcard", label: "Flashcard", icon: Layers, desc: "Học từ vựng theo thẻ", key: "flash" },
-  { href: "/check", label: "Check", icon: SpellCheck, desc: "Sửa lỗi tiếng Anh", key: "check" },
+  {
+    href: "/quiz", label: "Luyện đề", icon: ListChecks, desc: "Đề thi thử đa dạng", key: "quiz",
+    grad: "linear-gradient(150deg,#efd7ff,#f9c9e6)", glow: "rgba(192,132,252,0.5)", ink: "#3b1d52",
+  },
+  {
+    href: "/essay", label: "Vocab + Essay", icon: FileText, desc: "Essay + thẻ từ vựng", key: "essay",
+    grad: "linear-gradient(150deg,#ffe6c2,#ffbfb0)", glow: "rgba(251,146,60,0.45)", ink: "#5a2e10",
+  },
+  {
+    href: "/grammar", label: "Grammar", icon: BookOpen, desc: "Giải thích ngữ pháp", key: "grammar",
+    grad: "linear-gradient(150deg,#bfe0ff,#c4d0ff)", glow: "rgba(56,189,248,0.45)", ink: "#10324a",
+  },
+  {
+    href: "/flashcard", label: "Luyện từ", icon: Layers, desc: "Ôn từ vựng đã tạo", key: "flash",
+    grad: "linear-gradient(150deg,#c8f5e0,#a7e8c4)", glow: "rgba(52,211,153,0.45)", ink: "#0f3d2e",
+  },
+  {
+    href: "/check", label: "Check", icon: SpellCheck, desc: "Sửa lỗi tiếng Anh", key: "check",
+    grad: "linear-gradient(150deg,#ffd9e8,#ffc9d6)", glow: "rgba(244,114,182,0.45)", ink: "#5a1030",
+  },
 ];
 
 const DOW = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -87,34 +105,42 @@ export default function HomePage() {
       </Card>
 
       <h2 className="text-lg font-semibold mb-3">Tính năng</h2>
-      <div className="grid sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {FEATURES.map((f) => {
           const Icon = f.icon;
           const n = counts[f.key] || 0;
           return (
             <Link key={f.href} href={f.href}>
-              <Card className="hover:border-accent/70 transition group h-full">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-accent/15 text-accent grid place-items-center shrink-0">
+              <div
+                className="level-card group h-full rounded-3xl p-4"
+                style={{ background: f.grad, ["--glow" as string]: f.glow }}
+              >
+                <div className="flex items-center gap-3" style={{ color: f.ink }}>
+                  <div
+                    className="w-11 h-11 rounded-2xl grid place-items-center shrink-0"
+                    style={{ background: "rgba(255,255,255,0.4)" }}
+                  >
                     <Icon size={20} />
                   </div>
                   <div className="min-w-0">
-                    <div className="font-semibold text-white flex items-center gap-2">
+                    <div className="font-bold flex items-center gap-2">
                       {f.label}
                       {n > 0 && (
-                        <span className="text-[11px] text-muted font-normal">
+                        <span className="text-[11px] font-semibold" style={{ opacity: 0.7 }}>
                           {n} lượt
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-muted truncate">{f.desc}</div>
+                    <div className="text-sm truncate" style={{ opacity: 0.8 }}>
+                      {f.desc}
+                    </div>
                   </div>
                   <ChevronRight
                     size={18}
-                    className="ml-auto text-muted group-hover:text-accent transition"
+                    className="ml-auto transition-transform group-hover:translate-x-1"
                   />
                 </div>
-              </Card>
+              </div>
             </Link>
           );
         })}

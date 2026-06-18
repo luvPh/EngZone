@@ -27,7 +27,7 @@ export default function RootLayout({
         <AppProvider>
           <div className="flex min-h-screen">
             <Nav />
-            <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 pb-24 md:pb-10">
+            <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-10">
               {children}
             </main>
           </div>

@@ -36,7 +36,7 @@ module.exports = {
         "card-deep":
           "0 1px 0 0 rgba(255,255,255,0.08) inset, 0 18px 44px -18px rgba(0,0,0,0.8)",
         "glow-accent":
-          "0 10px 24px -8px rgba(124,92,255,0.55), 0 0 0 1px rgba(124,92,255,0.25)",
+          "0 14px 40px -10px rgba(124,92,255,0.7), 0 0 28px -4px rgba(124,92,255,0.45), 0 0 0 1px rgba(124,92,255,0.35)",
       },
     },
   },

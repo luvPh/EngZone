@@ -107,6 +107,11 @@ export function LevelSlider({
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full"
+        style={{
+          background: `linear-gradient(to right, #7c5cff 0%, #a78bfa ${
+            ((value - 1) / 4) * 100
+          }%, rgba(255,255,255,0.14) ${((value - 1) / 4) * 100}%)`,
+        }}
       />
     </div>
   );
@@ -117,23 +122,27 @@ export function Segmented<T extends string | number>({
   options,
   value,
   onChange,
+  fullWidth = false,
 }: {
-  options: { value: T; label: string }[];
+  options: { value: T; label: ReactNode }[];
   value: T;
   onChange: (v: T) => void;
+  fullWidth?: boolean;
 }) {
   return (
-    <div className="inline-flex rounded-xl glass-input p-1 gap-1">
+    <div
+      className={`rounded-xl glass-input p-1 gap-1 ${
+        fullWidth ? "flex w-full" : "inline-flex max-w-full flex-wrap"
+      }`}
+    >
       {options.map((o) => (
         <button
           key={String(o.value)}
           type="button"
           onClick={() => onChange(o.value)}
-          className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition ${
-            value === o.value
-              ? "bg-accent text-white"
-              : "text-muted hover:text-white"
-          }`}
+          className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+            fullWidth ? "flex-1" : ""
+          } ${value === o.value ? "bg-accent text-white" : "text-muted hover:text-white"}`}
         >
           {o.label}
         </button>

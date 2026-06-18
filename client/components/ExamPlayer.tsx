@@ -117,91 +117,97 @@ export default function ExamPlayer({
         </div>
       )}
 
-      {exam.sections.map((section, si) => (
-        <div key={si} className="space-y-3">
-          <div className="text-sm font-semibold text-accent uppercase tracking-wide">
-            Phần {si + 1}
-          </div>
-          <p className="text-slate-300 text-sm">{section.instruction}</p>
-          {section.passage && (
-            <div className="bg-surface-2 border border-border rounded-xl p-4 text-sm text-slate-200 prose-claude">
-              <Markdown>{normalizePassage(section.passage)}</Markdown>
-            </div>
-          )}
-
-          {section.questions.map((q) => {
-            counter += 1;
-            const idx = counter;
-            const ans = answers[idx];
-            const correct = ans === q.correct;
-            return (
-              <div
-                key={idx}
-                className={`bg-surface border rounded-2xl p-4 shadow-card ${
-                  effectiveSubmitted
-                    ? correct
-                      ? "border-ok/50"
-                      : "border-bad/50"
-                    : "border-border"
-                }`}
-              >
-                <div className="flex items-start gap-2 mb-3">
-                  <span className="text-accent font-bold">{idx + 1}.</span>
-                  <p className="font-medium text-slate-100">{q.q}</p>
-                  {effectiveSubmitted &&
-                    !review &&
-                    (correct ? (
-                      <Check size={18} className="text-ok shrink-0 ml-auto" />
-                    ) : (
-                      <X size={18} className="text-bad shrink-0 ml-auto" />
-                    ))}
-                </div>
-
-                <div className="space-y-2">
-                  {q.options.map((opt, oi) => {
-                    const selected = ans === oi;
-                    const isAnswer = q.correct === oi;
-                    let cls = "border-border hover:border-accent/60";
-                    if (effectiveSubmitted) {
-                      if (isAnswer) cls = "border-ok bg-ok/10";
-                      else if (selected) cls = "border-bad bg-bad/10";
-                      else cls = "border-border opacity-70";
-                    } else if (selected) {
-                      cls = "border-accent bg-accent/10";
-                    }
-                    return (
-                      <button
-                        key={oi}
-                        type="button"
-                        disabled={effectiveSubmitted}
-                        onClick={() =>
-                          onChange({
-                            ...state,
-                            answers: { ...answers, [idx]: oi },
-                          })
-                        }
-                        className={`w-full text-left px-3.5 py-2.5 rounded-xl border transition ${cls}`}
-                      >
-                        <span className="text-muted mr-2">
-                          {String.fromCharCode(65 + oi)}.
-                        </span>
-                        {cleanOption(opt)}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {effectiveSubmitted && q.explain && (
-                  <div className="mt-3 text-sm text-muted animate-fade-up">
-                    <span className="text-slate-300 font-medium">Giải thích: </span>
-                    {q.explain}
-                  </div>
-                )}
+      {exam.sections.map((section, si) => {
+        const questionEls = section.questions.map((q) => {
+          counter += 1;
+          const idx = counter;
+          const ans = answers[idx];
+          const correct = ans === q.correct;
+          return (
+            <div
+              key={idx}
+              className={`bg-surface border rounded-2xl p-4 shadow-card ${
+                effectiveSubmitted
+                  ? correct
+                    ? "border-ok/50"
+                    : "border-bad/50"
+                  : "border-border"
+              }`}
+            >
+              <div className="flex items-start gap-2 mb-3">
+                <span className="text-accent font-bold">{idx + 1}.</span>
+                <p className="font-medium text-slate-100">{q.q}</p>
+                {effectiveSubmitted &&
+                  !review &&
+                  (correct ? (
+                    <Check size={18} className="text-ok shrink-0 ml-auto" />
+                  ) : (
+                    <X size={18} className="text-bad shrink-0 ml-auto" />
+                  ))}
               </div>
-            );
-          })}
-        </div>
-      ))}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {q.options.map((opt, oi) => {
+                  const selected = ans === oi;
+                  const isAnswer = q.correct === oi;
+                  let cls = "border-border hover:border-accent/60";
+                  if (effectiveSubmitted) {
+                    if (isAnswer) cls = "border-ok bg-ok/10";
+                    else if (selected) cls = "border-bad bg-bad/10";
+                    else cls = "border-border opacity-70";
+                  } else if (selected) {
+                    cls = "border-accent bg-accent/10";
+                  }
+                  return (
+                    <button
+                      key={oi}
+                      type="button"
+                      disabled={effectiveSubmitted}
+                      onClick={() => onChange({ ...state, answers: { ...answers, [idx]: oi } })}
+                      className={`w-full text-left px-3.5 py-2.5 rounded-xl border transition ${cls}`}
+                    >
+                      <span className="text-muted mr-2">{String.fromCharCode(65 + oi)}.</span>
+                      {cleanOption(opt)}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {effectiveSubmitted && q.explain && (
+                <div className="mt-3 text-sm text-muted animate-fade-up">
+                  <span className="text-slate-300 font-medium">Giải thích: </span>
+                  {q.explain}
+                </div>
+              )}
+            </div>
+          );
+        });
+
+        const passageEl = section.passage ? (
+          <div className="bg-surface-2 border border-border rounded-xl p-4 text-sm text-slate-200 prose-claude lg:sticky lg:top-16 lg:self-start lg:max-h-[72vh] lg:overflow-auto">
+            <Markdown>{normalizePassage(section.passage)}</Markdown>
+          </div>
+        ) : null;
+
+        return (
+          <div key={si} className="space-y-3">
+            <div className="text-sm font-semibold text-accent uppercase tracking-wide">
+              Phần {si + 1}
+            </div>
+            <p className="text-slate-300 text-sm">{section.instruction}</p>
+
+            {passageEl ? (
+              // Reading/cloze: passage on the left (stays visible), questions on the right.
+              <div className="flex flex-col lg:flex-row gap-4 lg:items-start">
+                <div className="lg:w-1/2">{passageEl}</div>
+                <div className="lg:w-1/2 space-y-3">{questionEls}</div>
+              </div>
+            ) : (
+              <div className="space-y-3">{questionEls}</div>
+            )}
+          </div>
+        );
+      })}
 
       {!effectiveSubmitted && (
         <Button

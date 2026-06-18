@@ -1,20 +1,15 @@
 "use client";
 
-import { BookOpen } from "lucide-react";
+import { BookOpen, MessageCircle, Library } from "lucide-react";
 import { PageHeader, Segmented } from "@/components/ui";
 import { useFeatureState } from "@/lib/store";
 import { useModel } from "@/lib/modelConfig";
 import ModelSelector from "@/components/ModelSelector";
 import GrammarChat from "@/components/GrammarChat";
-import GrammarCoverflow from "@/components/GrammarCoverflow";
-import GrammarLevelView from "@/components/GrammarLevelView";
+import GrammarThemes from "@/components/GrammarThemes";
 
 export default function GrammarPage() {
   const [tab, setTab] = useFeatureState<"ask" | "library">("grammar:tab", "ask");
-  const [openLevel, setOpenLevel] = useFeatureState<string | null>(
-    "grammar:openLevel",
-    null
-  );
   const [model, setModel] = useModel("grammar");
 
   return (
@@ -31,19 +26,13 @@ export default function GrammarPage() {
           value={tab}
           onChange={setTab}
           options={[
-            { value: "ask", label: "💬 Hỏi AI" },
-            { value: "library", label: "📚 Thư viện" },
+            { value: "ask", label: <><MessageCircle size={15} /> Hỏi AI</> },
+            { value: "library", label: <><Library size={15} /> Thư viện</> },
           ]}
         />
       </div>
 
-      {tab === "ask" ? (
-        <GrammarChat provider={model} />
-      ) : openLevel ? (
-        <GrammarLevelView level={openLevel} onBack={() => setOpenLevel(null)} />
-      ) : (
-        <GrammarCoverflow onOpen={(lvl) => setOpenLevel(lvl)} />
-      )}
+      {tab === "ask" ? <GrammarChat provider={model} /> : <GrammarThemes />}
     </div>
   );
 }

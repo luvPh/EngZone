@@ -1,15 +1,8 @@
 "use client";
 
-import { FileText, Sparkles, RefreshCw } from "lucide-react";
-import {
-  PageHeader,
-  Field,
-  TextInput,
-  LevelSlider,
-  Button,
-  Spinner,
-  Card,
-} from "@/components/ui";
+import { FileText, RefreshCw } from "lucide-react";
+import { PageHeader, LevelSlider, Button } from "@/components/ui";
+import GenForm from "@/components/GenForm";
 import EssayView from "@/components/EssayView";
 import Markdown from "@/components/Markdown";
 import ModelSelector from "@/components/ModelSelector";
@@ -20,33 +13,36 @@ import { essayCommand } from "@/lib/prompts";
 import { extractJson } from "@/lib/extractJson";
 import { recordActivity } from "@/lib/storage";
 import { findItem, saveItem } from "@/lib/library";
+import { randomTopic } from "@/lib/topicPool";
+import { addVocab } from "@/lib/vocabPool";
 import type { Essay } from "@/lib/types";
 
 interface Inputs {
   topic: string;
   level: number;
+  custom: boolean;
 }
 interface RunState {
   loading: boolean;
   error: string;
   essay: Essay | null;
-  raw: string; // fallback if JSON parse fails
+  raw: string;
   source: "" | "new" | "library";
+  topic: string;
 }
 
 const KEY = "essay";
 
-// Old library items stored plain markdown; new ones store JSON. Handle both.
 function parseEssay(content: string): Essay | null {
   const obj = extractJson<Essay>(content);
-  if (obj?.essay) return obj;
-  return null;
+  return obj?.essay ? obj : null;
 }
 
 export default function EssayPage() {
   const [inputs, setInputs] = useFeatureState<Inputs>(`${KEY}:inputs`, {
     topic: "",
     level: 3,
+    custom: false,
   });
   const [run, setRun] = useFeatureState<RunState>(`${KEY}:run`, {
     loading: false,
@@ -54,40 +50,47 @@ export default function EssayPage() {
     essay: null,
     raw: "",
     source: "",
+    topic: "",
   });
   const [model, setModel] = useModel("essay");
 
-  const generate = (forceNew = false) => {
-    const topic = inputs.topic.trim();
-    if (!topic || run.loading) return;
+  const generate = (forceNew = false, resolvedTopic?: string) => {
+    if (run.loading) return;
+    const topic = (
+      resolvedTopic ??
+      (inputs.custom && inputs.topic.trim() ? inputs.topic.trim() : randomTopic())
+    ).trim();
 
     if (!forceNew) {
       const cached = findItem("essay", topic, inputs.level);
       if (cached) {
         const essay = parseEssay(cached.content);
+        if (essay?.vocab?.length) addVocab(essay.vocab, topic);
         setRun({
           loading: false,
           error: "",
           essay,
           raw: essay ? "" : cached.content,
           source: "library",
+          topic,
         });
         return;
       }
     }
 
-    setRun({ loading: true, error: "", essay: null, raw: "", source: "new" });
+    setRun({ loading: true, error: "", essay: null, raw: "", source: "new", topic });
     recordActivity({ feature: "essay", topic, level: inputs.level });
 
     runCommand(KEY, essayCommand(topic, inputs.level), {
-      onText: () => {}, // gen ngầm; UI hiện loader rồi render gọn gàng
+      onText: () => {},
       onDone: (full) => {
         const essay = parseEssay(full);
         if (!essay) {
-          setRun({ loading: false, error: "", essay: null, raw: full, source: "new" });
+          setRun({ loading: false, error: "", essay: null, raw: full, source: "new", topic });
           return;
         }
-        setRun({ loading: false, error: "", essay, raw: "", source: "new" });
+        setRun({ loading: false, error: "", essay, raw: "", source: "new", topic });
+        if (essay.vocab?.length) addVocab(essay.vocab, topic);
         saveItem({
           feature: "essay",
           topic,
@@ -97,62 +100,56 @@ export default function EssayPage() {
         });
       },
       onError: (msg) =>
-        setRun({ loading: false, error: msg, essay: null, raw: "", source: "" }),
+        setRun({ loading: false, error: msg, essay: null, raw: "", source: "", topic }),
     }, { provider: model });
   };
+
+  const hasResult = (run.essay || run.raw) && !run.loading;
 
   return (
     <div className="animate-fade-up">
       <PageHeader
-        title="Essay"
-        subtitle="Bài essay + danh sách từ vựng."
+        title="Vocab with Essay"
+        subtitle="Tạo bài essay + bộ từ vựng (tự lưu vào kho để Luyện từ)."
         icon={<FileText size={20} />}
         right={<ModelSelector value={model} onChange={setModel} />}
       />
 
-      <Card>
-        <Field label="Chủ đề">
-          <TextInput
-            value={inputs.topic}
-            onChange={(e) => setInputs({ ...inputs, topic: e.target.value })}
-            placeholder="vd: social media, education, technology…"
-          />
-        </Field>
-        <div className="mb-4">
-          <LevelSlider
-            value={inputs.level}
-            onChange={(level) => setInputs({ ...inputs, level })}
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => generate(false)} disabled={run.loading || !inputs.topic.trim()}>
-            {run.loading ? <Spinner /> : <Sparkles size={18} />}
-            {run.loading ? "Đang tạo…" : "Tạo essay"}
-          </Button>
-          {(run.essay || run.raw) && !run.loading && (
-            <Button variant="ghost" onClick={() => generate(true)}>
-              <RefreshCw size={16} /> Tạo mới
-            </Button>
-          )}
-        </div>
-      </Card>
+      <GenForm
+        custom={inputs.custom}
+        onCustomChange={(custom) => setInputs({ ...inputs, custom })}
+        topic={inputs.topic}
+        onTopicChange={(topic) => setInputs({ ...inputs, topic })}
+        loading={run.loading}
+        onGenerate={(t) => generate(false, t)}
+        label="Tạo Essay"
+        placeholder="vd: social media, education, technology…"
+      >
+        <LevelSlider value={inputs.level} onChange={(level) => setInputs({ ...inputs, level })} />
+      </GenForm>
 
-      {run.source === "library" && (
-        <p className="text-xs text-muted mt-3">
-          Đã tải từ thư viện. Bấm “Tạo mới” để viết bài khác.
-        </p>
+      {hasResult && (
+        <div className="flex items-center justify-between gap-3 mt-3">
+          <span className="text-xs text-muted">
+            Chủ đề: <span className="text-slate-300 font-medium">{run.topic}</span>
+            {run.source === "library" && " · đã tải từ thư viện"}
+          </span>
+          <Button variant="ghost" onClick={() => generate(true)}>
+            <RefreshCw size={16} /> Tạo mới
+          </Button>
+        </div>
       )}
       {run.error && <p className="text-bad text-sm mt-3">{run.error}</p>}
 
       {run.loading && (
         <div className="mt-5 flex items-center gap-2 text-muted text-sm">
-          <Spinner /> Đang viết essay…
+          Đang viết essay về “{run.topic}”…
         </div>
       )}
 
       {!run.loading && run.essay && <EssayView data={run.essay} />}
       {!run.loading && !run.essay && run.raw && (
-        <div className="mt-5 bg-surface border border-border rounded-2xl p-5 shadow-card">
+        <div className="mt-5 reading-surface rounded-2xl p-5">
           <Markdown>{run.raw}</Markdown>
         </div>
       )}

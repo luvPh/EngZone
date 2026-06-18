@@ -8,9 +8,11 @@ import {
   Layers,
   Trash2,
   ChevronDown,
+  Check,
+  Search,
   type LucideIcon,
 } from "lucide-react";
-import { PageHeader, Card, Button } from "@/components/ui";
+import { PageHeader, Button, TextInput } from "@/components/ui";
 import Markdown from "@/components/Markdown";
 import CardCarousel from "@/components/CardCarousel";
 import EssayView from "@/components/EssayView";
@@ -20,11 +22,13 @@ import { getLibrary, deleteItem, type LibItem, type LibFeature } from "@/lib/lib
 import { extractJson } from "@/lib/extractJson";
 import type { Quiz, FlashSet, Essay, Exam } from "@/lib/types";
 
-const META: Record<LibFeature, { icon: LucideIcon; label: string }> = {
-  quiz: { icon: ListChecks, label: "Quiz" },
-  essay: { icon: FileText, label: "Essay" },
-  flash: { icon: Layers, label: "Flashcard" },
+const META: Record<LibFeature, { icon: LucideIcon; label: string; color: string }> = {
+  quiz: { icon: ListChecks, label: "Quiz", color: "#a78bfa" },
+  essay: { icon: FileText, label: "Essay", color: "#fb923c" },
+  flash: { icon: Layers, label: "Flashcard", color: "#34d399" },
 };
+
+const FEATURE_ORDER: LibFeature[] = ["quiz", "essay", "flash"];
 
 function QuizReview({ json }: { json: string }) {
   const quiz = extractJson<Quiz>(json);
@@ -42,7 +46,9 @@ function QuizReview({ json }: { json: string }) {
                   className={oi === q.correct ? "text-ok font-medium" : "text-muted"}
                 >
                   {String.fromCharCode(65 + oi)}. {cleanOption(o)}
-                  {oi === q.correct && " ✓"}
+                  {oi === q.correct && (
+                    <Check size={13} className="inline ml-1 align-text-bottom" />
+                  )}
                 </li>
               ))}
             </ul>
@@ -89,10 +95,68 @@ function Viewer({ item }: { item: LibItem }) {
   );
 }
 
+type Filter = "all" | LibFeature;
+
+function Row({
+  it,
+  isOpen,
+  onToggle,
+  onRemove,
+}: {
+  it: LibItem;
+  isOpen: boolean;
+  onToggle: () => void;
+  onRemove: () => void;
+}) {
+  const m = META[it.feature];
+  const Icon = m.icon;
+  return (
+    <div className="glass hover-lift rounded-2xl overflow-hidden hover:shadow-glow-accent">
+      <div className="flex items-center gap-3 p-3.5">
+        <div
+          className="w-9 h-9 rounded-lg grid place-items-center shrink-0"
+          style={{ background: `${m.color}26`, color: m.color }}
+        >
+          <Icon size={17} />
+        </div>
+        <button className="flex-1 text-left min-w-0" onClick={onToggle}>
+          <div className="font-medium text-white truncate">{it.title}</div>
+          <div className="text-xs text-muted">
+            {m.label}
+            {it.level ? ` · Level ${it.level}` : ""} ·{" "}
+            {new Date(it.createdAt).toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })}
+          </div>
+        </button>
+        <button
+          onClick={onRemove}
+          className="text-muted hover:text-bad p-1.5 rounded-lg hover:bg-white/5"
+          aria-label="Xoá"
+        >
+          <Trash2 size={16} />
+        </button>
+        <button onClick={onToggle} className="text-muted p-1.5" aria-label="Mở">
+          <ChevronDown size={18} className={`transition ${isOpen ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+      {isOpen && (
+        <div className="border-t border-white/10 reading-surface p-4 animate-fade-up">
+          <Viewer item={it} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LibraryPage() {
   const [mounted, setMounted] = useState(false);
   const [items, setItems] = useState<LibItem[]>([]);
   const [open, setOpen] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
 
   const refresh = () => setItems(getLibrary());
   useEffect(() => {
@@ -108,6 +172,42 @@ export default function LibraryPage() {
 
   if (!mounted) return null;
 
+  const counts: Record<Filter, number> = {
+    all: items.length,
+    quiz: items.filter((i) => i.feature === "quiz").length,
+    essay: items.filter((i) => i.feature === "essay").length,
+    flash: items.filter((i) => i.feature === "flash").length,
+  };
+
+  const needle = q.trim().toLowerCase();
+  const matches = (it: LibItem) =>
+    (filter === "all" || it.feature === filter) &&
+    (!needle ||
+      it.title.toLowerCase().includes(needle) ||
+      it.topic.toLowerCase().includes(needle));
+  const filtered = items.filter(matches);
+
+  // When showing "all", group by feature; otherwise a single flat group.
+  const groups =
+    filter === "all"
+      ? FEATURE_ORDER.map((f) => ({
+          feature: f,
+          items: filtered.filter((it) => it.feature === f),
+        })).filter((g) => g.items.length > 0)
+      : [{ feature: filter as LibFeature, items: filtered }];
+
+  const chip = (key: Filter, label: string) => (
+    <button
+      type="button"
+      onClick={() => setFilter(key)}
+      className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+        filter === key ? "bg-accent text-white" : "glass-input text-muted hover:text-white"
+      }`}
+    >
+      {label} <span className="opacity-60">{counts[key]}</span>
+    </button>
+  );
+
   return (
     <div className="animate-fade-up">
       <PageHeader
@@ -117,67 +217,73 @@ export default function LibraryPage() {
       />
 
       {items.length === 0 ? (
-        <div className="text-center text-muted text-sm py-12 border border-dashed border-border rounded-2xl">
+        <div className="text-center text-muted text-sm py-12 reading-surface rounded-2xl">
           Chưa có nội dung nào. Tạo quiz / essay / flashcard để lưu vào đây.
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {items.map((it) => {
-            const m = META[it.feature];
-            const Icon = m.icon;
-            const isOpen = open === it.id;
-            return (
-              <Card key={it.id} className="p-0 overflow-hidden">
-                <div className="flex items-center gap-3 p-3.5">
-                  <div className="w-9 h-9 rounded-lg bg-accent/15 text-accent grid place-items-center shrink-0">
-                    <Icon size={17} />
-                  </div>
-                  <button
-                    className="flex-1 text-left min-w-0"
-                    onClick={() => setOpen(isOpen ? null : it.id)}
-                  >
-                    <div className="font-medium truncate">{it.title}</div>
-                    <div className="text-xs text-muted">
-                      {m.label} ·{" "}
-                      {new Date(it.createdAt).toLocaleDateString("vi-VN", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
+        <>
+          <div className="relative mb-3">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <TextInput
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Tìm theo tên hoặc chủ đề…"
+              className="pl-9"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-5">
+            {chip("all", "Tất cả")}
+            {chip("quiz", "Quiz")}
+            {chip("essay", "Essay")}
+            {chip("flash", "Flashcard")}
+          </div>
+
+          {filtered.length === 0 ? (
+            <p className="text-muted text-sm text-center py-10">Không tìm thấy mục nào khớp.</p>
+          ) : (
+            <div className="space-y-6">
+              {groups.map((g) => {
+                const m = META[g.feature];
+                const Icon = m.icon;
+                return (
+                  <section key={g.feature}>
+                    <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2.5">
+                      <Icon size={15} style={{ color: m.color }} />
+                      {m.label}
+                      <span className="text-xs text-muted font-normal">{g.items.length}</span>
+                    </h2>
+                    <div className="space-y-2.5">
+                      {g.items.map((it) => (
+                        <Row
+                          key={it.id}
+                          it={it}
+                          isOpen={open === it.id}
+                          onToggle={() => setOpen(open === it.id ? null : it.id)}
+                          onRemove={() => remove(it.id)}
+                        />
+                      ))}
                     </div>
-                  </button>
-                  <button
-                    onClick={() => remove(it.id)}
-                    className="text-muted hover:text-bad p-1.5 rounded-lg hover:bg-white/5"
-                    aria-label="Xoá"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  <button
-                    onClick={() => setOpen(isOpen ? null : it.id)}
-                    className="text-muted p-1.5"
-                    aria-label="Mở"
-                  >
-                    <ChevronDown
-                      size={18}
-                      className={`transition ${isOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                </div>
-                {isOpen && (
-                  <div className="border-t border-border p-4 animate-fade-up">
-                    <Viewer item={it} />
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-          <div className="pt-2">
-            <Button variant="ghost" onClick={() => { getLibrary().forEach((i) => deleteItem(i.id)); refresh(); }}>
+                  </section>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="pt-6 text-center">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (confirm("Xoá toàn bộ thư viện đã lưu?")) {
+                  getLibrary().forEach((i) => deleteItem(i.id));
+                  refresh();
+                }
+              }}
+            >
               <Trash2 size={16} /> Xoá tất cả
             </Button>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
