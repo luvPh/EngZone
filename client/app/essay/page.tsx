@@ -14,6 +14,7 @@ import { extractJson } from "@/lib/extractJson";
 import { recordActivity } from "@/lib/storage";
 import { findItem, saveItem } from "@/lib/library";
 import { randomTopic } from "@/lib/topicPool";
+import { addVocab } from "@/lib/vocabPool";
 import type { Essay } from "@/lib/types";
 
 interface Inputs {
@@ -64,6 +65,7 @@ export default function EssayPage() {
       const cached = findItem("essay", topic, inputs.level);
       if (cached) {
         const essay = parseEssay(cached.content);
+        if (essay?.vocab?.length) addVocab(essay.vocab, topic);
         setRun({
           loading: false,
           error: "",
@@ -88,6 +90,7 @@ export default function EssayPage() {
           return;
         }
         setRun({ loading: false, error: "", essay, raw: "", source: "new", topic });
+        if (essay.vocab?.length) addVocab(essay.vocab, topic);
         saveItem({
           feature: "essay",
           topic,
@@ -106,8 +109,8 @@ export default function EssayPage() {
   return (
     <div className="animate-fade-up">
       <PageHeader
-        title="Essay"
-        subtitle="Bài essay + danh sách từ vựng."
+        title="Vocab with Essay"
+        subtitle="Tạo bài essay + bộ từ vựng (tự lưu vào kho để Luyện từ)."
         icon={<FileText size={20} />}
         right={<ModelSelector value={model} onChange={setModel} />}
       />

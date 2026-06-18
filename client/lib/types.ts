@@ -34,6 +34,8 @@ export interface FlashSet {
 export interface VocabItem {
   word: string;
   meaning: string;
+  ipa?: string;
+  example?: string;
 }
 
 export interface Essay {

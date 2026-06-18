@@ -93,13 +93,13 @@ export function flashCommand(
 
 export function essayCommand(topic: string, level: number): string {
   const schema =
-    '{"essay":"toàn bộ bài essay (có thể nhiều đoạn, ngăn cách bằng \\n\\n)","vocab":[{"word":"từ/cụm từ","meaning":"nghĩa tiếng Việt"}]}';
+    '{"essay":"toàn bộ bài essay (có thể nhiều đoạn, ngăn cách bằng \\n\\n)","vocab":[{"word":"từ/cụm từ tiếng Anh","ipa":"phiên âm /.../","meaning":"nghĩa tiếng Việt tự nhiên","example":"câu ví dụ tiếng Anh dùng từ này"}]}';
   return [
     `/essay ${topic} ${level}`,
     "",
     `CHỈ trả về một JSON object hợp lệ — KHÔNG markdown, KHÔNG văn bản ngoài JSON:`,
     schema,
-    `"essay": bài hoàn chỉnh. "vocab": 8-12 từ/cụm quan trọng kèm nghĩa tiếng Việt.`,
+    `"essay": bài hoàn chỉnh. "vocab": 8-12 từ/cụm quan trọng XUẤT HIỆN trong bài, mỗi từ kèm "ipa" (phiên âm), "meaning" (nghĩa tiếng Việt) và "example" (một câu ví dụ tiếng Anh).`,
     `KHÔNG kèm structure, comprehension questions, hay writing prompt.`,
   ].join("\n");
 }

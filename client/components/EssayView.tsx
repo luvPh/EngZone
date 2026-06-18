@@ -21,14 +21,15 @@ export default function EssayView({ data }: { data: Essay }) {
           </h2>
           <ul className="divide-y divide-border">
             {data.vocab.map((v, i) => (
-              <li
-                key={i}
-                className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3 py-2.5"
-              >
-                <span className="font-semibold text-white sm:w-48 sm:shrink-0">
-                  {v.word}
-                </span>
-                <span className="text-slate-300 text-[15px]">{v.meaning}</span>
+              <li key={i} className="py-2.5">
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="font-semibold text-white">{v.word}</span>
+                  {v.ipa && <span className="text-xs text-accent-soft">{v.ipa}</span>}
+                  <span className="text-slate-300 text-[15px]">· {v.meaning}</span>
+                </div>
+                {v.example && (
+                  <p className="text-sm text-muted italic mt-0.5">{v.example}</p>
+                )}
               </li>
             ))}
           </ul>
