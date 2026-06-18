@@ -80,17 +80,18 @@ export default function ExamPlayer({
   return (
     <div className="mt-5 space-y-5">
       {timed && (
+        // Full-bleed top bar: flush to the top, spans the content width, rounded
+        // only at the bottom, strong glass — so scrolling content slides cleanly
+        // underneath instead of peeking through a gap.
         <div
-          className={`sticky top-2 z-10 flex items-center justify-between rounded-xl border px-4 py-2.5 shadow-card backdrop-blur ${
-            lowTime
-              ? "border-bad/60 bg-bad/15 text-bad"
-              : "border-border bg-surface/90 text-slate-200"
+          className={`sticky top-0 z-30 -mx-4 flex items-center justify-between rounded-b-2xl px-5 py-3.5 glass ${
+            lowTime ? "text-bad ring-1 ring-bad/50" : "text-slate-200"
           }`}
         >
           <span className="flex items-center gap-2 text-sm font-medium">
             <Clock size={16} /> Thời gian làm bài
           </span>
-          <span className="text-xl font-bold tabular-nums">{fmt(remaining)}</span>
+          <span className="text-2xl font-bold tabular-nums">{fmt(remaining)}</span>
         </div>
       )}
 
