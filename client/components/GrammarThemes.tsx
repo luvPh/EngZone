@@ -87,9 +87,12 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
     });
   };
 
-  // Start centred on the first card of the MIDDLE copy.
+  // Start centred on the first card of the MIDDLE copy (and mark it active up
+  // front so there's no unhighlighted flash before the scroll settles).
   useEffect(() => {
     if (!N) return;
+    centerRef.current = N;
+    setActiveLoop(N);
     const id = requestAnimationFrame(() => scrollToCard(N, false));
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
