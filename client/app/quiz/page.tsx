@@ -129,7 +129,7 @@ export default function QuizPage() {
     <div className="animate-fade-up">
       <PageHeader
         title="Luyện đề"
-        subtitle="Đề thi thử: cấu trúc THPT 2025 hoặc đề tổng hợp ngẫu nhiên đa dạng."
+        subtitle="Đề thi thử theo cấu trúc THPT 2025 — nội dung random hoá + chọn độ khó."
         icon={<ListChecks size={20} />}
         right={!testInProgress && <ModelSelector value={model} onChange={setModel} />}
       />
