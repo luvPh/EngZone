@@ -111,15 +111,20 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
       block: "nearest",
     });
 
+  // Loop navigation: wrap around the ends.
+  const go = (dir: number) => {
+    if (themes.length === 0) return;
+    centerCard((active + dir + themes.length) % themes.length);
+  };
+
   return (
     <div className="animate-fade-up">
       <div className="flex items-center justify-center gap-3 mb-1">
         <button
           type="button"
           aria-label="Trước"
-          onClick={() => centerCard(active - 1)}
-          className="glass-input rounded-full p-2 text-slate-200 hover:text-white disabled:opacity-30"
-          disabled={active === 0}
+          onClick={() => go(-1)}
+          className="glass-input rounded-full p-2 text-slate-200 hover:text-white"
         >
           <ChevronLeft size={18} />
         </button>
@@ -127,9 +132,8 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
         <button
           type="button"
           aria-label="Sau"
-          onClick={() => centerCard(active + 1)}
-          className="glass-input rounded-full p-2 text-slate-200 hover:text-white disabled:opacity-30"
-          disabled={active === themes.length - 1}
+          onClick={() => go(1)}
+          className="glass-input rounded-full p-2 text-slate-200 hover:text-white"
         >
           <ChevronRight size={18} />
         </button>
@@ -153,14 +157,13 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
               onClick={() => (isActive ? onOpen(t.category) : centerCard(i))}
               className={`flex-none w-[min(360px,74vw)] aspect-[2/3] snap-center flex flex-col text-left rounded-[28px] p-5 transition-all duration-300 ease-out ${
                 isActive
-                  ? "scale-100 opacity-100"
+                  ? "theme-glow scale-100 opacity-100"
                   : "scale-[0.85] opacity-55 brightness-[0.55] saturate-[0.8]"
               }`}
               style={{
                 background: p.grad,
-                boxShadow: isActive
-                  ? `0 26px 60px -18px ${p.glow}, 0 0 56px -6px ${p.glow}, inset 0 0 0 1px rgba(255,255,255,0.4)`
-                  : "inset 0 0 0 1px rgba(255,255,255,0.12)",
+                ["--glow" as string]: p.glow,
+                boxShadow: `inset 0 0 0 1px rgba(255,255,255,${isActive ? 0.4 : 0.12})`,
               }}
             >
               <div
@@ -170,7 +173,7 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
                 Chủ đề · {t.total} bài
               </div>
               <h3
-                className="font-serif font-bold text-2xl leading-[1.12] mt-2"
+                className="font-serif font-bold text-3xl leading-[1.1] mt-2"
                 style={{ color: p.ink }}
               >
                 {CATEGORY_VI[t.category] ?? t.category}
