@@ -27,7 +27,10 @@ export const FEATURES = [
 export type Feature = (typeof FEATURES)[number];
 
 const KEY = "engzone:models:v1";
-const DEFAULT: Provider = "claude";
+// Default provider per feature. Local dev defaults to Claude (CLI subscription);
+// a Vercel deploy sets NEXT_PUBLIC_DEFAULT_PROVIDER=gemini-flash so first-load
+// uses the free Gemini provider (Claude/CLI isn't available there).
+const DEFAULT: Provider = normalize(process.env.NEXT_PUBLIC_DEFAULT_PROVIDER);
 
 function readMap(): Partial<Record<Feature, Provider>> {
   if (typeof window === "undefined") return {};
@@ -39,7 +42,8 @@ function readMap(): Partial<Record<Feature, Provider>> {
 }
 
 export function getProvider(f: Feature): Provider {
-  return normalize(readMap()[f]);
+  const stored = readMap()[f];
+  return stored ? normalize(stored) : DEFAULT;
 }
 
 export function setProvider(f: Feature, p: Provider): void {

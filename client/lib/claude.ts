@@ -15,6 +15,19 @@ export function getMode(): Mode {
   return process.env.ANTHROPIC_API_KEY ? "api-key" : "cli";
 }
 
+// The Claude CLI subprocess only exists on a machine where `claude` is installed
+// and logged in — never on serverless (Vercel). Treat it as available only when
+// NOT running on Vercel and not explicitly disabled. Lets local dev keep using
+// the subscription CLI while a Vercel deploy quietly falls back to Gemini.
+export function cliAvailable(): boolean {
+  return !process.env.VERCEL && process.env.ENGZONE_NO_CLI !== "1";
+}
+
+// Whether the "Claude" provider can actually serve a request in this environment.
+export function claudeUsable(): boolean {
+  return getMode() === "api-key" || cliAvailable();
+}
+
 /**
  * Stream a chat completion as a plain-text stream of token deltas.
  * The system prompt (english-master SKILL.md) is passed in by the caller.

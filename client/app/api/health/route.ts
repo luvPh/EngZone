@@ -1,4 +1,4 @@
-import { getMode, MODEL } from "@/lib/claude";
+import { getMode, MODEL, claudeUsable } from "@/lib/claude";
 import { hasGemini } from "@/lib/gemini";
 
 export const runtime = "nodejs";
@@ -10,7 +10,9 @@ export async function GET() {
     mode: getMode(),
     model: MODEL,
     providers: {
-      claude: true, // CLI mode always available; SDK if key present
+      // Claude only when an API key is set OR the local CLI is available
+      // (false on Vercel) — the model picker disables it accordingly.
+      claude: claudeUsable(),
       gemini: hasGemini(),
     },
   });
