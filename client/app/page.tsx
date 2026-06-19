@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card } from "@/components/ui";
+import AuthButton from "@/components/AuthButton";
 import { getActivity, currentStreak, last7Days, countsByFeature } from "@/lib/storage";
 
 const FEATURES: {
@@ -61,11 +62,17 @@ export default function HomePage() {
 
   return (
     <div className="animate-fade-up">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Eng<span className="text-accent">Zone</span>
-        </h1>
-        <p className="text-muted mt-1">Học tiếng Anh mỗi ngày với Claude AI</p>
+      <header className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Eng<span className="text-accent">Zone</span>
+          </h1>
+          <p className="text-muted mt-1">Học tiếng Anh mỗi ngày với Claude AI</p>
+        </div>
+        {/* Mobile only — desktop shows the login control in the sidebar. */}
+        <div className="md:hidden shrink-0">
+          <AuthButton />
+        </div>
       </header>
 
       <div className="grid grid-cols-2 gap-3 mb-3">

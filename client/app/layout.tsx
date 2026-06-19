@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import ChatBubble from "@/components/ChatBubble";
+import SyncProvider from "@/components/SyncProvider";
 import { AppProvider } from "@/lib/store";
 
 export const metadata: Metadata = {
@@ -25,13 +26,15 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AppProvider>
-          <div className="flex min-h-screen">
-            <Nav />
-            <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-10">
-              {children}
-            </main>
-          </div>
-          <ChatBubble />
+          <SyncProvider>
+            <div className="flex min-h-screen">
+              <Nav />
+              <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-10">
+                {children}
+              </main>
+            </div>
+            <ChatBubble />
+          </SyncProvider>
         </AppProvider>
       </body>
     </html>

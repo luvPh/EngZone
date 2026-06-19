@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useFeatureState } from "@/lib/store";
+import AuthButton from "@/components/AuthButton";
 
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Home", icon: Home },
@@ -72,6 +73,9 @@ export default function Nav() {
             </Link>
           );
         })}
+        <div className="mt-auto pt-3">
+          <AuthButton />
+        </div>
       </aside>
 
       {/* Mobile bottom tab bar */}
