@@ -1,137 +1,167 @@
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ===== Claude Design tokens ===== */
+:root,
+[data-theme="light"] {
+  --bg: #faf9f5; /* warm paper */
+  --panel: #ffffff;
+  --rail: #f0eee6;
+  --fg: #1f1e1d;
+  --muted: #6b6a65;
+  --faint: #928f86;
+  --border: #e7e4da;
+  --accent: #c96442; /* coral */
+  --accent-soft: #e0967b;
+  --accent-weak: rgba(201, 100, 66, 0.13);
+  --grid: rgba(120, 90, 70, 0.06);
+}
+[data-theme="dark"] {
+  --bg: #1f1e1c;
+  --panel: #2a2926;
+  --rail: #191815;
+  --fg: #f3f1ea;
+  --muted: #a8a59b;
+  --faint: #7c7a72;
+  --border: #393732;
+  --accent: #d97757;
+  --accent-soft: #c76a50;
+  --accent-weak: rgba(217, 119, 87, 0.16);
+  --grid: rgba(255, 255, 255, 0.045);
+}
+
+/* Display direction: Serif (default) vs Soft */
+:root {
+  --disp: "Newsreader", Georgia, serif;
+  --radius: 18px;
+}
+[data-dir="soft"] {
+  --disp: "Be Vietnam Pro", sans-serif;
+  --radius: 14px;
+}
 
 html,
 body {
   height: 100%;
 }
 
-/* ===== Surface system: glass chrome vs solid reading ===== */
+body {
+  @apply bg-bg text-fg font-sans antialiased;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+::selection {
+  background: rgba(217, 119, 87, 0.22);
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ===== Shared surface classes (re-skinned to paper) =====
+   Older components reference these; re-skinning here retThemes them all. */
 .glass {
-  background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.08),
-      rgba(255, 255, 255, 0.02)
-    ),
-    rgba(28, 32, 44, 0.42);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.2),
-    0 16px 40px -18px rgba(0, 0, 0, 0.7);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px -12px rgba(0, 0, 0, 0.35);
 }
 .glass-input {
-  background: rgba(255, 255, 255, 0.06);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+[data-theme="dark"] .glass-input {
+  background: var(--rail);
 }
 .glass-nav {
-  background: rgba(15, 17, 24, 0.7);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  background: var(--rail);
 }
 .reading-surface {
-  background: #161922;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  background: var(--panel);
+  border: 1px solid var(--border);
 }
 
-/* ===== Liquid glass (iOS-26-style) — used by the exam timer bar =====
-   Heavier blur + saturation than .glass, a frosted tint, a specular edge
-   highlight (bright top-left → fading), and a moving sheen sweep on the
-   ::after layer. The element using this must be position:relative + overflow
-   clipping so the sheen stays inside the rounded shape. */
-.liquid-glass {
-  /* NB: no `position` here — it must not override the `sticky` utility on the
-     timer bar (this rule loads after Tailwind utilities and would win). The
-     element using .liquid-glass is itself positioned (sticky/relative), so the
-     ::before/::after layers are still contained. */
-  isolation: isolate;
-  overflow: hidden;
-  background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.16),
-      rgba(255, 255, 255, 0.04) 42%,
-      rgba(124, 92, 255, 0.08)
-    ),
-    rgba(22, 26, 38, 0.45);
-  -webkit-backdrop-filter: blur(22px) saturate(200%) brightness(1.08);
-  backdrop-filter: blur(22px) saturate(200%) brightness(1.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 -10px 24px -16px rgba(124, 92, 255, 0.5),
-    0 18px 46px -20px rgba(0, 0, 0, 0.75);
-}
-/* specular glint pinned to the top-left corner */
-.liquid-glass::before {
-  content: "";
+/* ===== Grid background (caro, fade at edges) ===== */
+.ez-grid {
   position: absolute;
-  inset: 0;
+  inset: 60px 0 0 0;
   pointer-events: none;
-  z-index: -1;
-  background: radial-gradient(
-    120% 140% at 0% 0%,
-    rgba(255, 255, 255, 0.28),
-    transparent 46%
-  );
+  z-index: 0;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 34px 34px;
+  -webkit-mask-image: radial-gradient(125% 95% at 50% -5%, #000 32%, transparent 78%);
+  mask-image: radial-gradient(125% 95% at 50% -5%, #000 32%, transparent 78%);
 }
-/* slow sheen sweep across the bar */
-.liquid-glass::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 45%;
-  left: -60%;
-  pointer-events: none;
-  z-index: -1;
-  background: linear-gradient(
-    100deg,
-    transparent,
-    rgba(255, 255, 255, 0.22),
-    transparent
-  );
-  transform: skewX(-18deg);
-  animation: lg-sheen 7s ease-in-out infinite;
-}
-@keyframes lg-sheen {
-  0%,
-  62% {
-    left: -60%;
+
+/* ===== Animations ===== */
+@keyframes ez-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
-  88%,
-  100% {
-    left: 130%;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
+@keyframes ez-drift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(36px, 30px) scale(1.08); }
+}
+@keyframes ez-drift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-34px, 40px) scale(1.1); }
+}
+@keyframes ez-drift3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -34px) scale(1.06); }
+}
+@keyframes ez-shine {
+  0%, 68% { left: -60%; }
+  100% { left: 150%; }
+}
+@keyframes ez-flip-in {
+  from { opacity: 0; transform: rotateY(-8deg) translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.ez-drift1 { animation: ez-drift1 12s ease-in-out infinite; }
+.ez-drift2 { animation: ez-drift2 15s ease-in-out infinite; }
+.ez-drift3 { animation: ez-drift3 13.5s ease-in-out infinite; }
+.ez-shine { animation: ez-shine 5.5s ease-in-out infinite; }
+.animate-fade-up { animation: ez-up 0.25s ease-out; }
+.animate-pop { animation: ez-up 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
 @media (prefers-reduced-motion: reduce) {
-  .liquid-glass::after {
+  .ez-drift1, .ez-drift2, .ez-drift3, .ez-shine {
     animation: none;
-    display: none;
   }
 }
 
-body {
-  @apply bg-bg text-slate-100 font-sans antialiased;
-  background-image:
-    radial-gradient(820px 520px at 88% -8%, rgba(124, 92, 255, 0.4), transparent 60%),
-    radial-gradient(680px 460px at -8% 6%, rgba(56, 189, 248, 0.24), transparent 58%),
-    radial-gradient(760px 620px at 50% 118%, rgba(168, 85, 247, 0.22), transparent 60%);
-  background-attachment: fixed;
+/* Hover lift for interactive cards */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
 }
 
-/* Range slider — neutral track; the filled portion is painted inline by
-   LevelSlider via a value-based gradient. Knob styled below. */
+/* Range slider — coral fill painted inline by LevelSlider. */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--accent-weak);
   outline: none;
 }
 input[type="range"]::-webkit-slider-thumb {
@@ -141,8 +171,8 @@ input[type="range"]::-webkit-slider-thumb {
   height: 18px;
   border-radius: 999px;
   background: #fff;
-  border: 3px solid #7c5cff;
-  box-shadow: 0 2px 8px rgba(124, 92, 255, 0.6);
+  border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px var(--accent-weak);
   cursor: pointer;
 }
 input[type="range"]::-moz-range-thumb {
@@ -150,102 +180,42 @@ input[type="range"]::-moz-range-thumb {
   height: 18px;
   border-radius: 999px;
   background: #fff;
-  border: 3px solid #7c5cff;
-  box-shadow: 0 2px 8px rgba(124, 92, 255, 0.6);
+  border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px var(--accent-weak);
   cursor: pointer;
 }
 
-/* Markdown output styling */
+/* ===== Markdown output styling ===== */
 .prose-claude {
-  @apply text-[15px] leading-relaxed text-slate-200;
+  @apply text-[15px] leading-relaxed text-fg;
 }
 .prose-claude h1,
 .prose-claude h2,
 .prose-claude h3 {
-  @apply font-bold mt-4 mb-2 text-white;
+  @apply font-semibold mt-4 mb-2 text-fg;
+  font-family: var(--disp), Georgia, serif;
 }
 .prose-claude h1 { @apply text-xl; }
-.prose-claude h2 { @apply text-lg border-b border-border/60 pb-1; }
+.prose-claude h2 { @apply text-lg border-b border-border pb-1; }
 .prose-claude h3 { @apply text-base; }
 .prose-claude p { @apply my-2; }
 .prose-claude ul { @apply list-disc pl-5 my-2 space-y-1; }
 .prose-claude ol { @apply list-decimal pl-5 my-2 space-y-1; }
-.prose-claude strong { @apply text-white font-semibold; }
+.prose-claude strong { @apply text-fg font-semibold; }
 .prose-claude code {
-  @apply bg-black/40 px-1.5 py-0.5 rounded text-accent text-[13px];
+  @apply px-1.5 py-0.5 rounded text-accent text-[13px];
+  background: var(--accent-weak);
 }
 .prose-claude pre {
-  @apply bg-black/40 p-3 rounded-lg overflow-x-auto my-2 text-[13px];
+  @apply p-3 rounded-lg overflow-x-auto my-2 text-[13px];
+  background: var(--rail);
 }
-.prose-claude pre code { @apply bg-transparent p-0 text-slate-200; }
+.prose-claude pre code { background: transparent; @apply p-0 text-fg; }
 .prose-claude table { @apply w-full my-3 text-sm border-collapse; }
 .prose-claude th,
 .prose-claude td { @apply border border-border px-2.5 py-1.5 text-left; }
-.prose-claude th { @apply bg-white/5; }
+.prose-claude th { background: var(--accent-weak); }
 .prose-claude blockquote {
   @apply border-l-2 border-accent pl-3 italic text-muted my-2;
 }
 .prose-claude a { @apply text-accent underline underline-offset-2; }
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-up { animation: fadeUp 0.25s ease-out; }
-
-/* Hover lift for interactive cards */
-.hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.hover-lift:hover {
-  transform: translateY(-3px);
-}
-
-/* Entrance pop for cards/coverflow */
-@keyframes popIn {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-.animate-pop { animation: popIn 0.3s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-
-/* Level showcase cards: pastel surface + colored glow halo, lift on hover.
-   --glow is set inline per card. */
-.level-card {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3),
-    0 18px 50px -14px var(--glow), 0 0 36px -6px var(--glow);
-  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1),
-    box-shadow 0.3s ease;
-  will-change: transform;
-}
-.level-card:hover {
-  transform: translateY(-10px) scale(1.05);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5),
-    0 36px 80px -10px var(--glow), 0 0 110px 6px var(--glow);
-}
-.level-card:active {
-  transform: translateY(-2px) scale(1.01);
-}
-
-/* Active theme card glow via ::before halo — reduced base + gentle pulse;
-   hover stops the pulse and brightens to the full glow. --glow set inline. */
-.theme-glow {
-  position: relative;
-}
-.theme-glow::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  z-index: -1;
-  box-shadow: 0 22px 50px -14px var(--glow), 0 0 46px 0 var(--glow);
-  animation: glowBreath 3s ease-in-out infinite;
-}
-@keyframes glowBreath {
-  0%, 100% { opacity: 0.72; transform: scale(0.992); }
-  50% { opacity: 1; transform: scale(1.012); }
-}
-.theme-glow:hover::before {
-  animation: none;
-  opacity: 1;
-  box-shadow: 0 30px 68px -12px var(--glow), 0 0 72px 8px var(--glow);
-}

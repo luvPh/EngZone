@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: ["class", '[data-theme="dark"]'],
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -8,21 +9,28 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        bg: "#0b0d12",
-        surface: "#14171f",
-        "surface-2": "#1b1f2a",
-        border: "#262b38",
-        muted: "#8b93a4",
+        // Claude Design tokens — driven by CSS variables (light/dark via data-theme).
+        bg: "var(--bg)",
+        panel: "var(--panel)",
+        rail: "var(--rail)",
+        // Back-compat aliases used across older pages.
+        surface: "var(--panel)",
+        "surface-2": "var(--rail)",
+        fg: "var(--fg)",
+        muted: "var(--muted)",
+        faint: "var(--faint)",
+        border: "var(--border)",
         accent: {
-          DEFAULT: "#7c5cff",
-          hover: "#6b4af0",
-          soft: "#a78bfa",
+          DEFAULT: "var(--accent)",
+          soft: "var(--accent-soft)",
+          weak: "var(--accent-weak)",
         },
         ok: "#34d399",
         bad: "#f87171",
       },
       fontFamily: {
         sans: [
+          "'Be Vietnam Pro'",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",
@@ -30,13 +38,16 @@ module.exports = {
           "Helvetica Neue",
           "sans-serif",
         ],
+        display: ["var(--disp)", "Newsreader", "Georgia", "serif"],
+      },
+      borderRadius: {
+        card: "var(--radius)",
       },
       boxShadow: {
-        card: "0 1px 0 0 rgba(255,255,255,0.03) inset, 0 8px 24px -12px rgba(0,0,0,0.6)",
-        "card-deep":
-          "0 1px 0 0 rgba(255,255,255,0.08) inset, 0 18px 44px -18px rgba(0,0,0,0.8)",
-        "glow-accent":
-          "0 14px 40px -10px rgba(124,92,255,0.7), 0 0 28px -4px rgba(124,92,255,0.45), 0 0 0 1px rgba(124,92,255,0.35)",
+        card: "0 6px 18px -12px rgba(0,0,0,0.35)",
+        "card-hover": "0 12px 28px -16px rgba(0,0,0,0.3)",
+        "card-deep": "0 24px 60px -28px rgba(0,0,0,0.4)",
+        "glow-accent": "0 6px 16px -8px var(--accent)",
       },
     },
   },

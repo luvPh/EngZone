@@ -77,7 +77,7 @@ export default function QuizPlayer({
           >
             <div className="flex items-start gap-2 mb-3">
               <span className="text-accent font-bold">{i + 1}.</span>
-              <p className="font-medium text-slate-100">{q.q}</p>
+              <p className="font-medium text-fg">{q.q}</p>
               {submitted &&
                 (correct ? (
                   <Check size={18} className="text-ok shrink-0 ml-auto" />
@@ -141,7 +141,7 @@ export default function QuizPlayer({
                 )}
                 {q.explain && (
                   <div className="text-muted">
-                    <span className="text-slate-300 font-medium">Giải thích: </span>
+                    <span className="text-muted font-medium">Giải thích: </span>
                     {q.explain}
                   </div>
                 )}

@@ -43,7 +43,7 @@ function StatBox({ value, label, cls }: { value: number; label: string; cls: str
 const EmptyCTA = ({ what }: { what: string }) => (
   <div className="reading-surface rounded-2xl p-8 text-center">
     <GraduationCap size={30} className="mx-auto text-accent mb-3" />
-    <p className="text-slate-300 font-medium">{what}</p>
+    <p className="text-muted font-medium">{what}</p>
     <p className="text-muted text-sm mt-1 mb-4">
       Tạo một bài ở “Vocab with Essay” — từ vựng & họ từ của bài sẽ tự lưu vào đây.
     </p>
@@ -139,7 +139,7 @@ export default function PracticePage() {
         ) : phase === "setup" ? (
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="grid grid-cols-3 gap-3 flex-1">
-              <StatBox value={stats.total} label="Tổng" cls="text-white" />
+              <StatBox value={stats.total} label="Tổng" cls="text-fg" />
               <StatBox value={stats.mastered} label="Đã thuộc" cls="text-ok" />
               <StatBox value={stats.learning} label="Đang học" cls="text-accent-soft" />
             </div>
@@ -148,7 +148,7 @@ export default function PracticePage() {
                 <p className="text-muted text-sm">Bạn đã thuộc tất cả! Tạo thêm Vocab with Essay để có từ mới.</p>
               ) : (
                 <>
-                  <div className="text-sm font-medium text-slate-300 mb-1.5">Số từ mỗi lượt</div>
+                  <div className="text-sm font-medium text-muted mb-1.5">Số từ mỗi lượt</div>
                   <Segmented
                     fullWidth
                     value={size}
@@ -170,7 +170,7 @@ export default function PracticePage() {
           <VocabPractice words={batch} onDone={finish} />
         ) : (
           <div className="glass rounded-2xl p-6 text-center">
-            <div className="text-3xl font-extrabold text-white">{lastCorrect}/{batch.length}</div>
+            <div className="text-3xl font-extrabold text-fg">{lastCorrect}/{batch.length}</div>
             <p className="text-muted text-sm mt-1 mb-1">câu đúng lượt này</p>
             <p className="text-sm text-ok mb-5">Đã thuộc {stats.mastered}/{stats.total} từ</p>
             <div className="flex gap-2 justify-center">
@@ -187,7 +187,7 @@ export default function PracticePage() {
         <FamilyPractice families={fBatch} onDone={fFinish} />
       ) : fPhase === "done" ? (
         <div className="glass rounded-2xl p-6 text-center">
-          <div className="text-3xl font-extrabold text-white">{fLast}/{fBatch.length}</div>
+          <div className="text-3xl font-extrabold text-fg">{fLast}/{fBatch.length}</div>
           <p className="text-muted text-sm mt-1 mb-1">câu đúng lượt này</p>
           <p className="text-sm text-ok mb-5">Đã thuộc {fStats.mastered}/{fStats.total} họ từ</p>
           <div className="flex gap-2 justify-center">
@@ -201,7 +201,7 @@ export default function PracticePage() {
         <>
           <div className="flex flex-col lg:flex-row gap-4 mb-6">
             <div className="grid grid-cols-3 gap-3 flex-1">
-              <StatBox value={fStats.total} label="Họ từ" cls="text-white" />
+              <StatBox value={fStats.total} label="Họ từ" cls="text-fg" />
               <StatBox value={fStats.mastered} label="Đã thuộc" cls="text-ok" />
               <StatBox value={fStats.learning} label="Đang học" cls="text-accent-soft" />
             </div>
@@ -216,12 +216,12 @@ export default function PracticePage() {
             </div>
           </div>
 
-          <h2 className="text-sm font-semibold text-slate-300 mb-3">Sơ đồ họ từ</h2>
+          <h2 className="text-sm font-semibold text-muted mb-3">Sơ đồ họ từ</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             {families.map((f) => (
               <div key={f.root} className="glass rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-white">{f.root}</span>
+                  <span className="text-sm font-semibold text-fg">{f.root}</span>
                   {f.mastered && <span className="text-xs text-ok">đã thuộc ✓</span>}
                 </div>
                 <FamilyMindmap family={f} />

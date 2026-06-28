@@ -56,7 +56,7 @@ export default function FamilyPractice({
         <span>Câu {idx + 1} / {total}</span>
         <span>Đúng {correctCount}</span>
       </div>
-      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mb-5">
+      <div className="h-1.5 rounded-full bg-accent-weak overflow-hidden mb-5">
         <div
           className="h-full bg-gradient-to-r from-accent to-[#38bdf8] transition-[width] duration-300"
           style={{ width: `${(idx / total) * 100}%` }}
@@ -67,10 +67,10 @@ export default function FamilyPractice({
         <p className="text-sm text-muted mb-1">
           Từ họ <span className="text-accent-soft font-semibold">{fam.root}</span> — đổi dạng:
         </p>
-        <div className="text-xl text-white">
+        <div className="text-xl text-fg">
           <span className="font-bold">{q.prompt.word}</span>
           {q.prompt.pos && <span className="text-sm text-muted"> ({q.prompt.pos})</span>}
-          {q.prompt.meaning && <span className="text-slate-300"> · {q.prompt.meaning}</span>}
+          {q.prompt.meaning && <span className="text-muted"> · {q.prompt.meaning}</span>}
         </div>
         <p className="mt-3 text-sm">
           Điền dạng <span className="font-semibold text-accent">{q.target.pos || "khác"}</span>
@@ -100,8 +100,8 @@ export default function FamilyPractice({
               {result ? <Check size={16} /> : <X size={16} />}
               {result ? "Chính xác!" : "Chưa đúng"}
             </div>
-            <div className="text-sm text-slate-300 mt-1">
-              <span className="font-semibold text-white">{q.target.word}</span>
+            <div className="text-sm text-muted mt-1">
+              <span className="font-semibold text-fg">{q.target.word}</span>
               {q.target.pos && <span className="text-xs text-muted"> ({q.target.pos})</span>}
               {q.target.meaning && <span> · {q.target.meaning}</span>}
             </div>

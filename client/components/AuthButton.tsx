@@ -16,7 +16,7 @@ export default function AuthButton({ className = "" }: { className?: string }) {
       <button
         type="button"
         onClick={signIn}
-        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium glass-input text-slate-200 hover:text-white transition ${className}`}
+        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium glass-input text-fg hover:text-fg transition ${className}`}
       >
         <LogIn size={16} /> Đăng nhập đồng bộ
       </button>
@@ -30,14 +30,14 @@ export default function AuthButton({ className = "" }: { className?: string }) {
       ) : (
         <Cloud size={14} className="text-ok shrink-0" />
       )}
-      <span className="truncate text-slate-300 flex-1" title={email}>
+      <span className="truncate text-muted flex-1" title={email}>
         {email}
       </span>
       <button
         type="button"
         onClick={signOut}
         aria-label="Đăng xuất"
-        className="text-muted hover:text-white shrink-0"
+        className="text-muted hover:text-fg shrink-0"
       >
         <LogOut size={15} />
       </button>

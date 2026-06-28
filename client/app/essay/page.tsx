@@ -134,7 +134,7 @@ export default function EssayPage() {
       {hasResult && (
         <div className="flex items-center justify-between gap-3 mt-3">
           <span className="text-xs text-muted">
-            Chủ đề: <span className="text-slate-300 font-medium">{run.topic}</span>
+            Chủ đề: <span className="text-muted font-medium">{run.topic}</span>
             {run.source === "library" && " · đã tải từ thư viện"}
           </span>
           <Button variant="ghost" onClick={() => generate(true)}>

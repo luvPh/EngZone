@@ -97,7 +97,7 @@ export default function GrammarChat({ provider }: { provider?: string }) {
             key={i}
             className={
               m.role === "user"
-                ? "glass-input rounded-2xl px-4 py-3 text-sm text-slate-200"
+                ? "glass-input rounded-2xl px-4 py-3 text-sm text-fg"
                 : "reading-surface rounded-2xl px-4 py-3"
             }
           >

@@ -189,7 +189,7 @@ export default function ChatBubble() {
               <ModelSelector value={model} onChange={setModel} />
               <button
                 onClick={() => setOpen(false)}
-                className="text-muted hover:text-white p-1 rounded-lg hover:bg-white/5"
+                className="text-muted hover:text-fg p-1 rounded-lg hover:bg-accent-weak"
                 aria-label="Đóng"
               >
                 <X size={18} />
@@ -208,7 +208,7 @@ export default function ChatBubble() {
                     <button
                       key={s}
                       onClick={() => send(s)}
-                      className="text-left text-[13px] px-3 py-2 rounded-lg border border-border hover:border-accent/60 hover:bg-white/5 transition"
+                      className="text-left text-[13px] px-3 py-2 rounded-lg border border-border hover:border-accent/60 hover:bg-accent-weak transition"
                     >
                       {s}
                     </button>

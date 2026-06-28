@@ -48,7 +48,7 @@ export default function FamilyMindmap({ family }: { family: FamilyEntry }) {
           className="absolute -translate-x-1/2 -translate-y-1/2 glass rounded-lg px-2.5 py-1 text-center whitespace-nowrap"
           style={{ left: `${pos[i].x}%`, top: `${pos[i].y}%` }}
         >
-          <div className="text-sm font-semibold text-white leading-tight">{m.word}</div>
+          <div className="text-sm font-semibold text-fg leading-tight">{m.word}</div>
           {m.pos && <div className="text-[10px] text-accent-soft leading-tight">{m.pos}</div>}
         </div>
       ))}

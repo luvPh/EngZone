@@ -97,7 +97,7 @@ export default function VocabPractice({
         <span>Câu {idx + 1} / {total}</span>
         <span>Đúng {correctCount}</span>
       </div>
-      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mb-5">
+      <div className="h-1.5 rounded-full bg-accent-weak overflow-hidden mb-5">
         <div
           className="h-full bg-gradient-to-r from-accent to-[#38bdf8] transition-[width] duration-300"
           style={{ width: `${(idx / total) * 100}%` }}
@@ -114,7 +114,7 @@ export default function VocabPractice({
         )}
         {q.mode === "fill" && <p className="text-sm text-muted mb-1">Điền từ đúng:</p>}
 
-        <div className="text-2xl font-bold text-white mb-1">
+        <div className="text-2xl font-bold text-fg mb-1">
           {q.mode === "mcq-word" ? w.word : q.mode === "mcq-meaning" ? w.meaning : w.meaning}
         </div>
         {q.mode === "mcq-word" && w.ipa && (
@@ -148,8 +148,8 @@ export default function VocabPractice({
               const isCorrect = normalize(opt.word) === normalize(w.word);
               const isPicked = picked === opt.word;
               let cls = "glass-input hover:border-accent/60";
-              if (result !== null && isCorrect) cls = "bg-ok/20 border border-ok/60 text-white";
-              else if (result !== null && isPicked) cls = "bg-bad/20 border border-bad/60 text-white";
+              if (result !== null && isCorrect) cls = "bg-ok/20 border border-ok/60 text-fg";
+              else if (result !== null && isPicked) cls = "bg-bad/20 border border-bad/60 text-fg";
               return (
                 <button
                   key={opt.word}
@@ -174,8 +174,8 @@ export default function VocabPractice({
               {result ? <Check size={16} /> : <X size={16} />}
               {result ? "Chính xác!" : "Chưa đúng"}
             </div>
-            <div className="text-sm text-slate-300 mt-1">
-              <span className="font-semibold text-white">{w.word}</span>
+            <div className="text-sm text-muted mt-1">
+              <span className="font-semibold text-fg">{w.word}</span>
               {w.pos && <span className="text-xs text-muted"> ({w.pos})</span>}
               {w.ipa && <span className="text-accent-soft"> {w.ipa}</span>} · {w.meaning}
             </div>

@@ -101,7 +101,7 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
       <div className="animate-fade-up">
         <Link
           href="/grammar"
-          className="inline-flex items-center gap-1 text-sm text-muted hover:text-white mb-3"
+          className="inline-flex items-center gap-1 text-sm text-muted hover:text-fg mb-3"
         >
           <ArrowLeft size={16} /> Tất cả bài học
         </Link>
@@ -172,7 +172,7 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
                   onClick={() =>
                     document.getElementById(h.id)?.scrollIntoView({ behavior: "smooth", block: "start" })
                   }
-                  className="text-sm text-slate-300 hover:text-accent text-left"
+                  className="text-sm text-muted hover:text-accent text-left"
                 >
                   {h.text}
                 </button>
@@ -189,7 +189,7 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
           {neighbors.prev ? (
             <Link
               href={`/grammar/${neighbors.prev.slug}`}
-              className="glass rounded-xl px-3 py-2 text-sm text-slate-200 hover:text-white inline-flex items-center gap-1.5 max-w-[48%]"
+              className="glass rounded-xl px-3 py-2 text-sm text-fg hover:text-fg inline-flex items-center gap-1.5 max-w-[48%]"
             >
               <ChevronLeft size={16} className="shrink-0" />
               <span className="truncate">{neighbors.prev.titleVi}</span>
@@ -200,7 +200,7 @@ export default function GrammarLessonView({ slug }: { slug: string }) {
           {neighbors.next ? (
             <Link
               href={`/grammar/${neighbors.next.slug}`}
-              className="glass rounded-xl px-3 py-2 text-sm text-slate-200 hover:text-white inline-flex items-center gap-1.5 max-w-[48%] ml-auto"
+              className="glass rounded-xl px-3 py-2 text-sm text-fg hover:text-fg inline-flex items-center gap-1.5 max-w-[48%] ml-auto"
             >
               <span className="truncate">Bài tiếp: {neighbors.next.titleVi}</span>
               <ChevronRight size={16} className="shrink-0" />

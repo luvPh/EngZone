@@ -120,7 +120,7 @@ function Row({
           <Icon size={17} />
         </div>
         <button className="flex-1 text-left min-w-0" onClick={onToggle}>
-          <div className="font-medium text-white truncate">{it.title}</div>
+          <div className="font-medium text-fg truncate">{it.title}</div>
           <div className="text-xs text-muted">
             {m.label}
             {it.level ? ` · Level ${it.level}` : ""} ·{" "}
@@ -133,7 +133,7 @@ function Row({
         </button>
         <button
           onClick={onRemove}
-          className="text-muted hover:text-bad p-1.5 rounded-lg hover:bg-white/5"
+          className="text-muted hover:text-bad p-1.5 rounded-lg hover:bg-accent-weak"
           aria-label="Xoá"
         >
           <Trash2 size={16} />
@@ -201,7 +201,7 @@ export default function LibraryPage() {
       type="button"
       onClick={() => setFilter(key)}
       className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-        filter === key ? "bg-accent text-white" : "glass-input text-muted hover:text-white"
+        filter === key ? "bg-accent text-white" : "glass-input text-muted hover:text-fg"
       }`}
     >
       {label} <span className="opacity-60">{counts[key]}</span>
@@ -248,7 +248,7 @@ export default function LibraryPage() {
                 const Icon = m.icon;
                 return (
                   <section key={g.feature}>
-                    <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-2.5">
+                    <h2 className="flex items-center gap-2 text-sm font-semibold text-muted mb-2.5">
                       <Icon size={15} style={{ color: m.color }} />
                       {m.label}
                       <span className="text-xs text-muted font-normal">{g.items.length}</span>

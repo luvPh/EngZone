@@ -6,40 +6,50 @@ import { ArrowLeft } from "lucide-react";
 export function PageHeader({
   title,
   subtitle,
+  eyebrow,
   icon,
   right,
   onBack,
 }: {
   title: string;
   subtitle?: string;
+  /** Small uppercase coral label above the title (Claude Design eyebrow). */
+  eyebrow?: string;
   icon?: ReactNode;
   right?: ReactNode;
   onBack?: () => void;
 }) {
   return (
-    <header className="mb-5 flex items-start justify-between gap-3">
-      <div className="flex items-center gap-3">
+    <header className="mb-7 flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3 min-w-0">
         {onBack && (
           <button
             type="button"
             onClick={onBack}
             aria-label="Quay lại"
-            className="w-10 h-10 rounded-full glass-input text-slate-200 hover:text-white grid place-items-center shrink-0 transition"
+            className="w-10 h-10 rounded-full glass-input text-fg hover:text-accent grid place-items-center shrink-0 transition mt-1"
           >
             <ArrowLeft size={18} />
           </button>
         )}
-        {icon && (
-          <div className="w-10 h-10 rounded-xl glass-input text-accent grid place-items-center shrink-0">
-            {icon}
-          </div>
-        )}
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">{title}</h1>
-          {subtitle && <p className="text-muted text-sm mt-0.5">{subtitle}</p>}
+        <div className="min-w-0">
+          {(eyebrow || icon) && (
+            <div className="flex items-center gap-2 mb-2.5 text-[13px] font-semibold uppercase tracking-[.04em] text-accent">
+              {icon}
+              {eyebrow ?? title}
+            </div>
+          )}
+          <h1 className="font-display text-[34px] leading-[1.12] font-medium tracking-[-0.02em] text-fg">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-muted text-base mt-2 max-w-[50ch] leading-relaxed">
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
-      {right}
+      {right && <div className="shrink-0">{right}</div>}
     </header>
   );
 }
@@ -55,21 +65,21 @@ export function Card({
 }) {
   const surface = variant === "reading" ? "reading-surface" : "glass";
   return (
-    <div className={`${surface} rounded-2xl p-4 ${className}`}>{children}</div>
+    <div className={`${surface} rounded-card p-5 ${className}`}>{children}</div>
   );
 }
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block mb-4">
-      <span className="block text-sm font-medium text-slate-300 mb-1.5">{label}</span>
+      <span className="block text-[13px] font-semibold text-fg mb-2">{label}</span>
       {children}
     </label>
   );
 }
 
 const inputBase =
-  "w-full glass-input rounded-xl px-3.5 py-2.5 text-base outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 transition";
+  "w-full glass-input rounded-[11px] px-3.5 py-2.5 text-base text-fg outline-none focus:border-accent focus:ring-2 focus:ring-accent/25 transition placeholder:text-faint";
 
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${inputBase} ${props.className ?? ""}`} />;
@@ -88,12 +98,12 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" }) {
   const styles =
     variant === "primary"
-      ? "bg-gradient-to-r from-accent to-accent-soft text-white hover:brightness-110 shadow-glow-accent"
-      : "glass-input hover:bg-white/10 text-slate-200";
+      ? "bg-accent text-white hover:brightness-105 shadow-glow-accent"
+      : "glass-input text-fg hover:border-accent";
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition disabled:opacity-50 disabled:cursor-default disabled:shadow-none ${styles} ${props.className ?? ""}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-[11px] px-[22px] py-[11px] font-semibold transition disabled:opacity-50 disabled:cursor-default disabled:shadow-none ${styles} ${props.className ?? ""}`}
     >
       {children}
     </button>
@@ -107,10 +117,11 @@ export function LevelSlider({
   value: number;
   onChange: (v: number) => void;
 }) {
+  const pct = ((value - 1) / 4) * 100;
   return (
     <div>
-      <div className="flex justify-between text-sm mb-1.5">
-        <span className="font-medium text-slate-300">Độ khó</span>
+      <div className="flex justify-between text-[13px] mb-2">
+        <span className="font-semibold text-fg">Độ khó</span>
         <span className="text-accent font-semibold">Level {value} / 5</span>
       </div>
       <input
@@ -121,9 +132,7 @@ export function LevelSlider({
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full"
         style={{
-          background: `linear-gradient(to right, #7c5cff 0%, #a78bfa ${
-            ((value - 1) / 4) * 100
-          }%, rgba(255,255,255,0.14) ${((value - 1) / 4) * 100}%)`,
+          background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--accent-weak) ${pct}%)`,
         }}
       />
     </div>
@@ -144,7 +153,7 @@ export function Segmented<T extends string | number>({
 }) {
   return (
     <div
-      className={`rounded-xl glass-input p-1 gap-1 ${
+      className={`rounded-[11px] glass-input p-1 gap-1 ${
         fullWidth ? "flex w-full" : "inline-flex max-w-full flex-wrap"
       }`}
     >
@@ -155,7 +164,12 @@ export function Segmented<T extends string | number>({
           onClick={() => onChange(o.value)}
           className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition whitespace-nowrap ${
             fullWidth ? "flex-1" : ""
-          } ${value === o.value ? "bg-accent text-white" : "text-muted hover:text-white"}`}
+          }`}
+          style={
+            value === o.value
+              ? { background: "var(--accent)", color: "#fff" }
+              : { background: "transparent", color: "var(--muted)" }
+          }
         >
           {o.label}
         </button>
@@ -183,10 +197,16 @@ export function ProgressBar({
 }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
-    <div className={`h-[7px] rounded-full bg-white/10 overflow-hidden ${className}`}>
+    <div
+      className={`h-[7px] rounded-full overflow-hidden ${className}`}
+      style={{ background: "var(--accent-weak)" }}
+    >
       <div
-        className="h-full rounded-full bg-gradient-to-r from-accent to-[#38bdf8] transition-[width] duration-500"
-        style={{ width: `${pct}%` }}
+        className="h-full rounded-full transition-[width] duration-500"
+        style={{
+          width: `${pct}%`,
+          background: "linear-gradient(90deg, var(--accent-soft), var(--accent))",
+        }}
       />
     </div>
   );

@@ -46,7 +46,7 @@ export default function GenForm({
               onChange={(e) => onCustomChange(e.target.checked)}
               className="w-4 h-4 accent-accent"
             />
-            <span className="text-sm font-medium text-slate-200">Tự điền chủ đề</span>
+            <span className="text-sm font-medium text-fg">Tự điền chủ đề</span>
             {!custom && (
               <span className="text-xs text-muted">· mặc định: chủ đề ngẫu nhiên</span>
             )}

@@ -40,7 +40,7 @@ export default function ModelSelector({
               active
                 ? "bg-accent text-white"
                 : available
-                  ? "text-muted hover:text-white"
+                  ? "text-muted hover:text-fg"
                   : "text-muted/40 cursor-not-allowed"
             }`}
           >

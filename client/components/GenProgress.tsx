@@ -42,7 +42,7 @@ export default function GenProgress({
   return (
     <div className="mt-5 bg-surface border border-border rounded-2xl p-4 shadow-card animate-fade-up">
       <div className="flex items-center justify-between text-sm mb-2">
-        <span className="text-slate-300">{label}</span>
+        <span className="text-muted">{label}</span>
         <span className="text-muted tabular-nums">
           {Math.round(pct)}% · {mm}:{ss}
         </span>

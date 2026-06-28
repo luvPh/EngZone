@@ -145,7 +145,7 @@ export default function QuizPage() {
             <div className="flex flex-col lg:flex-row gap-5">
               <div className="flex-1 min-w-0 space-y-4">
                 <div>
-                  <div className="text-sm font-medium text-slate-300 mb-1.5">Độ khó</div>
+                  <div className="text-sm font-medium text-muted mb-1.5">Độ khó</div>
                   <Segmented
                     value={difficulty}
                     onChange={setDifficulty}
@@ -157,7 +157,7 @@ export default function QuizPage() {
                   />
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-slate-300 mb-1.5">Độ dài</div>
+                  <div className="text-sm font-medium text-muted mb-1.5">Độ dài</div>
                   <Segmented
                     value={examRun.size}
                     onChange={(size) => setExamRun({ ...examRun, size })}
@@ -208,7 +208,7 @@ export default function QuizPage() {
       {examRun.exam && !examRun.loading && !session.started && !examState.submitted && (
         <Card className="mt-4 text-center">
           <GraduationCap size={28} className="mx-auto text-accent mb-2" />
-          <div className="font-semibold text-white">Sẵn sàng làm bài</div>
+          <div className="font-semibold text-fg">Sẵn sàng làm bài</div>
           <p className="text-sm text-muted mt-1 mb-4">
             {examRun.exam.sections.reduce((n, s) => n + s.questions.length, 0)} câu ·{" "}
             {examRun.size === 40 ? "50 phút" : "25 phút"} · bấm bắt đầu là tính giờ và khoá chuyển tab.

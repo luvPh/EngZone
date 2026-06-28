@@ -40,7 +40,7 @@ export default function CardCarousel({ cards }: { cards: Flashcard[] }) {
         {/* Front: word */}
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-3xl font-bold text-white">{card.word}</div>
+            <div className="text-3xl font-bold text-fg">{card.word}</div>
             {card.ipa && (
               <div className="text-muted mt-1 font-mono text-sm">{card.ipa}</div>
             )}
@@ -51,7 +51,7 @@ export default function CardCarousel({ cards }: { cards: Flashcard[] }) {
               e.stopPropagation();
               speak();
             }}
-            className="text-muted hover:text-accent p-1.5 rounded-lg hover:bg-white/5"
+            className="text-muted hover:text-accent p-1.5 rounded-lg hover:bg-accent-weak"
             aria-label="Phát âm"
           >
             <Volume2 size={20} />
@@ -59,14 +59,14 @@ export default function CardCarousel({ cards }: { cards: Flashcard[] }) {
         </div>
 
         {card.example && (
-          <p className="mt-4 text-slate-300 italic">“{card.example}”</p>
+          <p className="mt-4 text-muted italic">“{card.example}”</p>
         )}
 
         {/* Back: meaning + note */}
         <div className="mt-auto pt-5">
           {revealed ? (
             <div className="animate-fade-up border-t border-border pt-4">
-              <div className="text-lg text-white font-semibold">{card.meaning}</div>
+              <div className="text-lg text-fg font-semibold">{card.meaning}</div>
               {card.note && <p className="text-muted text-sm mt-2">{card.note}</p>}
             </div>
           ) : (
@@ -81,7 +81,7 @@ export default function CardCarousel({ cards }: { cards: Flashcard[] }) {
       <div className="flex items-center justify-between mt-4">
         <button
           onClick={() => go(-1)}
-          className="inline-flex items-center gap-1 px-4 py-2.5 rounded-xl bg-white/5 border border-border hover:bg-white/10 transition"
+          className="inline-flex items-center gap-1 px-4 py-2.5 rounded-xl bg-accent-weak border border-border hover:bg-accent-weak transition"
         >
           <ChevronLeft size={18} /> Trước
         </button>

@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import Nav from "@/components/Nav";
+import Shell from "@/components/Shell";
 import ChatBubble from "@/components/ChatBubble";
 import SyncProvider from "@/components/SyncProvider";
 import { AppProvider } from "@/lib/store";
+import { ThemeProvider, themeNoFlashScript } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "EngZone — Học tiếng Anh với AI",
@@ -14,7 +15,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#0b0d12",
+  themeColor: "#faf9f5",
 };
 
 export default function RootLayout({
@@ -23,19 +24,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="vi" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeNoFlashScript }} />
+      </head>
       <body>
-        <AppProvider>
-          <SyncProvider>
-            <div className="flex min-h-screen">
-              <Nav />
-              <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 pb-24 md:pb-10">
-                {children}
-              </main>
-            </div>
-            <ChatBubble />
-          </SyncProvider>
-        </AppProvider>
+        <ThemeProvider>
+          <AppProvider>
+            <SyncProvider>
+              <Shell>{children}</Shell>
+              <ChatBubble />
+            </SyncProvider>
+          </AppProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

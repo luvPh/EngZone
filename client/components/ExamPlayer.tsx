@@ -110,7 +110,7 @@ export default function ExamPlayer({
               stuck
                 ? "-mx-4 rounded-b-2xl rounded-t-none px-5 py-3.5"
                 : "mx-0 mt-1 rounded-2xl px-5 py-3"
-            } ${lowTime ? "text-bad ring-1 ring-bad/50" : "text-slate-200"}`}
+            } ${lowTime ? "text-bad ring-1 ring-bad/50" : "text-fg"}`}
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <Clock size={16} /> Thời gian làm bài
@@ -121,7 +121,7 @@ export default function ExamPlayer({
       )}
 
       {exam.title && !review && (
-        <h2 className="text-xl font-bold text-white">{exam.title}</h2>
+        <h2 className="text-xl font-bold text-fg">{exam.title}</h2>
       )}
 
       {submitted && !review && (
@@ -162,7 +162,7 @@ export default function ExamPlayer({
             >
               <div className="flex items-start gap-2 mb-3">
                 <span className="text-accent font-bold">{idx + 1}.</span>
-                <p className="font-medium text-slate-100 whitespace-pre-line">{q.q}</p>
+                <p className="font-medium text-fg whitespace-pre-line">{q.q}</p>
                 {effectiveSubmitted &&
                   !review &&
                   (correct ? (
@@ -201,7 +201,7 @@ export default function ExamPlayer({
 
               {effectiveSubmitted && q.explain && (
                 <div className="mt-3 text-sm text-muted animate-fade-up">
-                  <span className="text-slate-300 font-medium">Giải thích: </span>
+                  <span className="text-muted font-medium">Giải thích: </span>
                   {q.explain}
                 </div>
               )}
@@ -210,7 +210,7 @@ export default function ExamPlayer({
         });
 
         const passageEl = section.passage ? (
-          <div className="bg-surface-2 border border-border rounded-xl p-4 text-sm text-slate-200 prose-claude lg:sticky lg:top-16 lg:max-h-[80vh] lg:overflow-auto">
+          <div className="bg-surface-2 border border-border rounded-xl p-4 text-sm text-fg prose-claude lg:sticky lg:top-16 lg:max-h-[80vh] lg:overflow-auto">
             <Markdown>{normalizePassage(section.passage)}</Markdown>
           </div>
         ) : null;
@@ -220,7 +220,7 @@ export default function ExamPlayer({
             <div className="text-sm font-semibold text-accent uppercase tracking-wide">
               Phần {si + 1}
             </div>
-            <p className="text-slate-300 text-sm">{section.instruction}</p>
+            <p className="text-muted text-sm">{section.instruction}</p>
 
             {passageEl ? (
               // Reading/cloze: passage left (sticky — follows while you scroll its
