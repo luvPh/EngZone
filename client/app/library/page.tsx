@@ -10,6 +10,8 @@ import {
   ChevronDown,
   Check,
   Search,
+  BookMarked,
+  Volume2,
   type LucideIcon,
 } from "lucide-react";
 import { PageHeader, Button, TextInput } from "@/components/ui";
@@ -19,6 +21,7 @@ import EssayView from "@/components/EssayView";
 import ExamPlayer from "@/components/ExamPlayer";
 import { cleanOption } from "@/components/QuizPlayer";
 import { getLibrary, deleteItem, type LibItem, type LibFeature } from "@/lib/library";
+import { getSavedWords, removeWord, type PoolWord } from "@/lib/vocabPool";
 import { extractJson } from "@/lib/extractJson";
 import type { Quiz, FlashSet, Essay, Exam } from "@/lib/types";
 
@@ -68,7 +71,11 @@ function QuizReview({ json }: { json: string }) {
 function Viewer({ item }: { item: LibItem }) {
   if (item.feature === "essay") {
     const essay = extractJson<Essay>(item.content);
-    return essay?.essay ? <EssayView data={essay} /> : <Markdown>{item.content}</Markdown>;
+    return essay?.essay ? (
+      <EssayView data={essay} topic={item.topic} />
+    ) : (
+      <Markdown>{item.content}</Markdown>
+    );
   }
   if (item.feature === "quiz") {
     // Exam items are { sections: [...] }; practice quizzes are { questions: [...] }.
@@ -95,7 +102,59 @@ function Viewer({ item }: { item: LibItem }) {
   );
 }
 
-type Filter = "all" | LibFeature;
+type Filter = "all" | LibFeature | "vocab";
+
+const VOCAB_COLOR = "#38bdf8";
+
+function speakWord(w: string) {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(w);
+  u.lang = "en-US";
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+// Catalogue of words manually saved from essay lookup.
+function SavedWords({ words, onRemove }: { words: PoolWord[]; onRemove: (w: string) => void }) {
+  return (
+    <section>
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-muted mb-2.5">
+        <BookMarked size={15} style={{ color: VOCAB_COLOR }} />
+        Từ vựng đã lưu
+        <span className="text-xs text-muted font-normal">{words.length}</span>
+      </h2>
+      <div className="grid sm:grid-cols-2 gap-2.5">
+        {words.map((w) => (
+          <div key={w.word} className="glass rounded-2xl p-3.5">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-fg">{w.word}</span>
+              {w.pos && <span className="text-xs text-muted">({w.pos})</span>}
+              {w.ipa && <span className="text-xs text-accent-soft">{w.ipa}</span>}
+              <button
+                type="button"
+                aria-label="Phát âm"
+                onClick={() => speakWord(w.word)}
+                className="text-muted hover:text-accent"
+              >
+                <Volume2 size={14} />
+              </button>
+              <button
+                type="button"
+                aria-label="Xoá từ"
+                onClick={() => onRemove(w.word)}
+                className="ml-auto text-muted hover:text-bad p-1 rounded-lg hover:bg-accent-weak"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+            <p className="text-[15px] text-fg mt-0.5">{w.meaning}</p>
+            {w.example && <p className="text-sm text-muted italic mt-0.5">{w.example}</p>}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function Row({
   it,
@@ -154,11 +213,15 @@ function Row({
 export default function LibraryPage() {
   const [mounted, setMounted] = useState(false);
   const [items, setItems] = useState<LibItem[]>([]);
+  const [words, setWords] = useState<PoolWord[]>([]);
   const [open, setOpen] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
-  const refresh = () => setItems(getLibrary());
+  const refresh = () => {
+    setItems(getLibrary());
+    setWords(getSavedWords());
+  };
   useEffect(() => {
     setMounted(true);
     refresh();
@@ -170,16 +233,31 @@ export default function LibraryPage() {
     refresh();
   };
 
+  const removeSavedWord = (w: string) => {
+    removeWord(w);
+    refresh();
+  };
+
   if (!mounted) return null;
 
   const counts: Record<Filter, number> = {
-    all: items.length,
+    all: items.length + words.length,
     quiz: items.filter((i) => i.feature === "quiz").length,
     essay: items.filter((i) => i.feature === "essay").length,
     flash: items.filter((i) => i.feature === "flash").length,
+    vocab: words.length,
   };
 
   const needle = q.trim().toLowerCase();
+  const visibleWords =
+    filter === "all" || filter === "vocab"
+      ? words.filter(
+          (w) =>
+            !needle ||
+            w.word.toLowerCase().includes(needle) ||
+            w.meaning.toLowerCase().includes(needle)
+        )
+      : [];
   const matches = (it: LibItem) =>
     (filter === "all" || it.feature === filter) &&
     (!needle ||
@@ -216,7 +294,7 @@ export default function LibraryPage() {
         icon={<LibIcon size={20} />}
       />
 
-      {items.length === 0 ? (
+      {items.length === 0 && words.length === 0 ? (
         <div className="text-center text-muted text-sm py-12 reading-surface rounded-2xl">
           Chưa có nội dung nào. Tạo quiz / essay / flashcard để lưu vào đây.
         </div>
@@ -237,12 +315,16 @@ export default function LibraryPage() {
             {chip("quiz", "Quiz")}
             {chip("essay", "Essay")}
             {chip("flash", "Flashcard")}
+            {chip("vocab", "Từ vựng")}
           </div>
 
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && visibleWords.length === 0 ? (
             <p className="text-muted text-sm text-center py-10">Không tìm thấy mục nào khớp.</p>
           ) : (
             <div className="space-y-6">
+              {visibleWords.length > 0 && (
+                <SavedWords words={visibleWords} onRemove={removeSavedWord} />
+              )}
               {groups.map((g) => {
                 const m = META[g.feature];
                 const Icon = m.icon;

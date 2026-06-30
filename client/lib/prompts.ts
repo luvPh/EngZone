@@ -193,13 +193,16 @@ export function checkCommand(text: string): string {
 }
 
 // Tra nghĩa 1 từ trong essay theo ĐÚNG ngữ cảnh câu. Trả JSON thuần để app parse.
+// "word" PHẢI là dạng nguyên bản (lemma): từ chia thì/bị động/số nhiều → đưa về
+// gốc (broken→break, studied→study, children→child). Kèm "family" (họ từ) nếu có.
 export function wordLookupCommand(word: string, sentence: string): string {
   return [
     `Tra nghĩa của từ tiếng Anh "${word}" khi nó xuất hiện trong câu sau:`,
     `"${sentence}"`,
     ``,
     `CHỈ trả về DUY NHẤT một JSON object (không kèm bất kỳ chữ nào khác, không bọc \`\`\`), đúng dạng:`,
-    `{"word":"<dạng nguyên mẫu của từ>","pos":"<n/v/adj/adv/prep...>","ipa":"<phiên âm IPA>","meaning":"<nghĩa tiếng Việt HỢP với ngữ cảnh câu trên>","example":"<1 câu ví dụ tiếng Anh ngắn, khác câu trên>"}`,
+    `{"word":"<DẠNG NGUYÊN BẢN/lemma của từ: nếu là quá khứ, bị động, số nhiều... thì đưa về nguyên mẫu>","pos":"<n/v/adj/adv/prep...>","ipa":"<IPA của dạng nguyên bản>","meaning":"<nghĩa tiếng Việt HỢP ngữ cảnh câu trên>","example":"<1 câu ví dụ tiếng Anh ngắn, khác câu trên>","family":{"root":"<gốc từ>","members":[{"word":"<từ cùng họ, 1 từ>","pos":"<loại từ>","meaning":"<nghĩa tiếng Việt>"}]}}`,
+    `Nếu từ không có họ từ rõ ràng (≥2 dạng khác loại) thì bỏ hẳn khoá "family".`,
   ].join("\n");
 }
 

@@ -15,6 +15,7 @@ export interface PoolWord {
   correct: number; // cumulative correct answers
   modes: string[]; // distinct test modes answered correctly
   mastered: boolean;
+  saved?: boolean; // manually saved from essay lookup → shown as its own catalogue
   source?: string; // e.g. essay topic
   addedAt: number;
 }
@@ -44,7 +45,11 @@ const cap = (w: string) => {
 };
 
 /** Add vocab to the pool (dedupe by word; enrich missing ipa/example/example). */
-export function addVocab(items: VocabItem[], source?: string): void {
+export function addVocab(
+  items: VocabItem[],
+  source?: string,
+  opts: { saved?: boolean } = {}
+): void {
   const list = read();
   const byWord = new Map(list.map((e) => [norm(e.word), e]));
   for (const it of items) {
@@ -57,6 +62,7 @@ export function addVocab(items: VocabItem[], source?: string): void {
       if (!existing.ipa && it.ipa) existing.ipa = it.ipa;
       if (!existing.example && it.example) existing.example = it.example;
       if (!existing.pos && it.pos) existing.pos = it.pos;
+      if (opts.saved) existing.saved = true;
     } else {
       byWord.set(k, {
         word: cap(it.word),
@@ -67,12 +73,25 @@ export function addVocab(items: VocabItem[], source?: string): void {
         correct: 0,
         modes: [],
         mastered: false,
+        saved: opts.saved,
         source,
         addedAt: Date.now(),
       });
     }
   }
   write([...byWord.values()]);
+}
+
+/** Words manually saved from essay lookup (own catalogue in the Library). */
+export function getSavedWords(): PoolWord[] {
+  return read()
+    .filter((e) => e.saved)
+    .sort((a, b) => b.addedAt - a.addedAt);
+}
+
+/** Remove a word from the pool entirely (by word, case-insensitive). */
+export function removeWord(word: string): void {
+  write(read().filter((e) => norm(e.word) !== norm(word)));
 }
 
 export function getPool(): PoolWord[] {

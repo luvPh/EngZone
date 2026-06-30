@@ -6,12 +6,19 @@ import { runCommand } from "@/lib/stream";
 import { wordLookupCommand } from "@/lib/prompts";
 import { extractJson } from "@/lib/extractJson";
 import { addVocab } from "@/lib/vocabPool";
-import type { Essay, VocabItem } from "@/lib/types";
+import { addFamilies } from "@/lib/wordFamily";
+import { getProvider } from "@/lib/modelConfig";
+import type { Essay, VocabItem, FamilyMemberItem } from "@/lib/types";
+
+// Lookup result = a vocab item (base form) plus an optional word family.
+type LookupData = VocabItem & {
+  family?: { root: string; members: FamilyMemberItem[] };
+};
 
 type LookupState =
   | { status: "loading" }
   | { status: "error" }
-  | { status: "ok"; data: VocabItem };
+  | { status: "ok"; data: LookupData };
 
 // One word token (letters + internal ' or -) we render as clickable.
 const WORD_RE = /[A-Za-z]+(?:['’-][A-Za-z]+)*/g;
@@ -52,7 +59,7 @@ export default function EssayView({
           {
             onText: () => {},
             onDone: (full) => {
-              const obj = extractJson<VocabItem>(full);
+              const obj = extractJson<LookupData>(full);
               setCache((cc) => ({
                 ...cc,
                 [key]: obj?.meaning
@@ -62,7 +69,7 @@ export default function EssayView({
             },
             onError: () => setCache((cc) => ({ ...cc, [key]: { status: "error" } })),
           },
-          { provider, maxTokens: 300 }
+          { provider: provider ?? getProvider("essay"), maxTokens: 400 }
         );
         return { ...c, [key]: { status: "loading" } };
       });
@@ -75,9 +82,17 @@ export default function EssayView({
     lookup(word, sentence);
   };
 
-  const addToPool = (word: string, item: VocabItem) => {
-    addVocab([item], topic ? `essay: ${topic}` : "essay");
-    setAdded((a) => ({ ...a, [word.toLowerCase()]: true }));
+  // Save the BASE form (lemma) — never the clicked inflected surface form — and
+  // fold in the word family if the lookup returned one.
+  const addToPool = (surfaceWord: string, item: LookupData) => {
+    const base = (item.word || surfaceWord).trim();
+    addVocab(
+      [{ word: base, meaning: item.meaning, pos: item.pos, ipa: item.ipa, example: item.example }],
+      topic ? `essay: ${topic}` : "essay",
+      { saved: true }
+    );
+    if (item.family?.members?.length) addFamilies([item.family]);
+    setAdded((a) => ({ ...a, [surfaceWord.toLowerCase()]: true }));
   };
 
   return (
@@ -194,12 +209,11 @@ function tokenize(text: string): Tok[] {
 }
 
 const POPOVER_W = 260;
-const FADE_DISTANCE = 110; // px the word may scroll before the popover fully fades
 
-function place(anchor: HTMLElement): { left: number; top: number; opacity: number } {
+function place(anchor: HTMLElement): { left: number; top: number } {
   const r = anchor.getBoundingClientRect();
   const vw = typeof window !== "undefined" ? window.innerWidth : 9999;
-  return { left: Math.max(8, Math.min(r.left, vw - POPOVER_W - 8)), top: r.bottom + 6, opacity: 1 };
+  return { left: Math.max(8, Math.min(r.left, vw - POPOVER_W - 8)), top: r.bottom + 6 };
 }
 
 function WordPopover({
@@ -215,33 +229,21 @@ function WordPopover({
   state: LookupState | undefined;
   added: boolean;
   onClose: () => void;
-  onAdd: (word: string, item: VocabItem) => void;
+  onAdd: (word: string, item: LookupData) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const top0 = useRef<number | null>(null); // word's viewport-top when opened
   const [box, setBox] = useState(() => place(anchor));
 
   useEffect(() => {
     let raf = 0;
-    const update = () => {
-      const r = anchor.getBoundingClientRect();
-      if (top0.current === null) top0.current = r.top;
-      const offscreen = r.bottom < 0 || r.top > window.innerHeight;
-      const delta = Math.abs(r.top - top0.current);
-      const opacity = offscreen ? 0 : Math.max(0, 1 - delta / FADE_DISTANCE);
-      if (opacity <= 0.02) {
-        onClose();
-        return;
-      }
-      const left = Math.max(8, Math.min(r.left, window.innerWidth - POPOVER_W - 8));
-      setBox({ left, top: r.bottom + 6, opacity });
-    };
+    // Follow the word on scroll/resize so the card stays glued to it. It only
+    // closes on an outside click — never on scroll.
+    const update = () => setBox(place(anchor));
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(update);
     };
-    // capture:true so it also fires for any nested scroll container.
-    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("scroll", onScroll, true); // capture: nested scrollers too
     window.addEventListener("resize", onScroll);
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node;
@@ -257,25 +259,25 @@ function WordPopover({
     };
   }, [anchor, onClose]);
 
+  // Headword = base form once known, else the clicked surface word.
+  const head = state?.status === "ok" ? state.data.word : word;
+
   return (
     <>
       <div
         ref={ref}
         className="fixed z-50 glass rounded-2xl p-3.5 shadow-glow-accent"
-        style={{
-          left: box.left,
-          top: box.top,
-          width: POPOVER_W,
-          opacity: box.opacity,
-          transition: "opacity 90ms linear",
-        }}
+        style={{ left: box.left, top: box.top, width: POPOVER_W }}
       >
         <div className="flex items-center gap-2 mb-1">
-          <span className="font-semibold text-fg">{word}</span>
+          <span className="font-semibold text-fg">{head}</span>
+          {head.toLowerCase() !== word.toLowerCase() && (
+            <span className="text-xs text-muted">← {word}</span>
+          )}
           <button
             type="button"
             aria-label="Phát âm"
-            onClick={() => speak(word)}
+            onClick={() => speak(head)}
             className="text-muted hover:text-accent"
           >
             <Volume2 size={15} />
@@ -312,10 +314,18 @@ function WordPopover({
             {state.data.example && (
               <p className="text-sm text-muted italic mt-1">{state.data.example}</p>
             )}
+            {state.data.family?.members && state.data.family.members.length >= 2 && (
+              <p className="text-xs text-muted mt-1.5">
+                Họ từ:{" "}
+                <span className="text-accent-soft">
+                  {state.data.family.members.map((m) => m.word).join(", ")}
+                </span>
+              </p>
+            )}
             <button
               type="button"
               disabled={added}
-              onClick={() => onAdd(word, { ...state.data, word })}
+              onClick={() => onAdd(word, state.data)}
               className={`mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition ${
                 added
                   ? "bg-ok/15 text-ok cursor-default"
