@@ -241,7 +241,7 @@ export default function LibraryPage() {
   if (!mounted) return null;
 
   const counts: Record<Filter, number> = {
-    all: items.length + words.length,
+    all: items.length,
     quiz: items.filter((i) => i.feature === "quiz").length,
     essay: items.filter((i) => i.feature === "essay").length,
     flash: items.filter((i) => i.feature === "flash").length,
@@ -249,8 +249,10 @@ export default function LibraryPage() {
   };
 
   const needle = q.trim().toLowerCase();
+  // Vocab is its own tab — only shown under the "Từ vựng" filter, never mixed
+  // into "Tất cả".
   const visibleWords =
-    filter === "all" || filter === "vocab"
+    filter === "vocab"
       ? words.filter(
           (w) =>
             !needle ||
@@ -267,12 +269,14 @@ export default function LibraryPage() {
 
   // When showing "all", group by feature; otherwise a single flat group.
   const groups =
-    filter === "all"
-      ? FEATURE_ORDER.map((f) => ({
-          feature: f,
-          items: filtered.filter((it) => it.feature === f),
-        })).filter((g) => g.items.length > 0)
-      : [{ feature: filter as LibFeature, items: filtered }];
+    filter === "vocab"
+      ? [] // vocab tab renders SavedWords only — no library feature groups
+      : filter === "all"
+        ? FEATURE_ORDER.map((f) => ({
+            feature: f,
+            items: filtered.filter((it) => it.feature === f),
+          })).filter((g) => g.items.length > 0)
+        : [{ feature: filter as LibFeature, items: filtered }];
 
   const chip = (key: Filter, label: string) => (
     <button
