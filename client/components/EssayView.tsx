@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, Plus, Check, Volume2, X } from "lucide-react";
 import { runCommand } from "@/lib/stream";
 import { wordLookupCommand } from "@/lib/prompts";
@@ -262,13 +263,16 @@ function WordPopover({
   // Headword = base form once known, else the clicked surface word.
   const head = state?.status === "ok" ? state.data.word : word;
 
-  return (
-    <>
-      <div
-        ref={ref}
-        className="fixed z-50 glass rounded-2xl p-3.5 shadow-glow-accent"
-        style={{ left: box.left, top: box.top, width: POPOVER_W }}
-      >
+  if (typeof document === "undefined") return null;
+
+  // Portal to <body> so the fixed popover escapes any transformed/animated
+  // ancestor (animate-fade-up) — otherwise it isn't painted until a mouse move.
+  return createPortal(
+    <div
+      ref={ref}
+      className="fixed z-50 glass rounded-2xl p-3.5 shadow-glow-accent"
+      style={{ left: box.left, top: box.top, width: POPOVER_W }}
+    >
         <div className="flex items-center gap-2 mb-1">
           <span className="font-semibold text-fg">{head}</span>
           {head.toLowerCase() !== word.toLowerCase() && (
@@ -344,7 +348,7 @@ function WordPopover({
             </button>
           </>
         )}
-      </div>
-    </>
+      </div>,
+    document.body
   );
 }
