@@ -21,7 +21,7 @@ import EssayView from "@/components/EssayView";
 import ExamPlayer from "@/components/ExamPlayer";
 import { cleanOption } from "@/components/QuizPlayer";
 import { getLibrary, deleteItem, type LibItem, type LibFeature } from "@/lib/library";
-import { getSavedWords, removeWord, type PoolWord } from "@/lib/vocabPool";
+import { getPool, removeWord, type PoolWord } from "@/lib/vocabPool";
 import { extractJson } from "@/lib/extractJson";
 import type { Quiz, FlashSet, Essay, Exam } from "@/lib/types";
 
@@ -120,7 +120,7 @@ function SavedWords({ words, onRemove }: { words: PoolWord[]; onRemove: (w: stri
     <section>
       <h2 className="flex items-center gap-2 text-sm font-semibold text-muted mb-2.5">
         <BookMarked size={15} style={{ color: VOCAB_COLOR }} />
-        Từ vựng đã lưu
+        Kho từ vựng
         <span className="text-xs text-muted font-normal">{words.length}</span>
       </h2>
       <div className="grid sm:grid-cols-2 gap-2.5">
@@ -220,7 +220,7 @@ export default function LibraryPage() {
 
   const refresh = () => {
     setItems(getLibrary());
-    setWords(getSavedWords());
+    setWords(getPool().sort((a, b) => b.addedAt - a.addedAt));
   };
   useEffect(() => {
     setMounted(true);
