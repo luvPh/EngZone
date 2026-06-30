@@ -15,7 +15,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         <Topbar />
         {/* Scroll area */}
         <div className="flex-1 relative z-[1]">
-          <main className="max-w-[880px] mx-auto px-5 py-8 pb-24 md:px-10 md:py-10 md:pb-20">
+          <main className="max-w-[1000px] mx-auto px-5 py-8 pb-24 md:px-10 md:py-10 md:pb-20">
             {children}
           </main>
         </div>

@@ -180,35 +180,8 @@ export default function Nav() {
             );
           })}
 
-          {/* ===== Footer: goal / streak / profile ===== */}
+          {/* ===== Footer: streak / profile ===== */}
           <div className="mt-auto flex flex-col gap-[11px] pt-3.5">
-            <div
-              className="rounded-[14px] p-[13px_14px]"
-              style={{
-                background: "var(--panel)",
-                border: "1px solid var(--border)",
-                boxShadow: "0 6px 18px -12px rgba(0,0,0,.35)",
-              }}
-            >
-              <div className="flex justify-between items-center text-xs mb-[9px]">
-                <span className="font-semibold text-fg">Mục tiêu hôm nay</span>
-                <span className="text-accent font-bold">3/5</span>
-              </div>
-              <div
-                className="h-[7px] rounded-full overflow-hidden"
-                style={{ background: "var(--accent-weak)" }}
-              >
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: "60%",
-                    background:
-                      "linear-gradient(90deg, var(--accent-soft), var(--accent))",
-                  }}
-                />
-              </div>
-            </div>
-
             <div
               className="flex items-center gap-[9px] px-3 py-2.5 rounded-xl text-xs font-semibold text-accent"
               style={{ background: "var(--accent-weak)" }}

@@ -153,7 +153,7 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
   };
 
   return (
-    <div className="animate-fade-up min-h-[72vh] flex flex-col justify-center">
+    <div className="animate-fade-up min-h-[56vh] flex flex-col justify-center -mt-2">
       <div className="flex items-center justify-center gap-3 mb-1">
         <button
           type="button"
@@ -176,7 +176,7 @@ function ThemeCarousel({ onOpen }: { onOpen: (c: string) => void }) {
 
       <div
         ref={scroller}
-        className="flex items-start gap-4 overflow-x-auto snap-x snap-mandatory px-[19%] sm:px-[30%] py-20 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex items-start gap-4 overflow-x-auto snap-x snap-mandatory px-[19%] sm:px-[30%] py-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {loop.map((t, i) => {
           const pct = t.total > 0 ? Math.round((t.learned / t.total) * 100) : 0;
