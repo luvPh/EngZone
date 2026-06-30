@@ -150,7 +150,9 @@ export default function EssayPage() {
         </div>
       )}
 
-      {!run.loading && run.essay && <EssayView data={run.essay} />}
+      {!run.loading && run.essay && (
+        <EssayView data={run.essay} provider={model} topic={run.topic} />
+      )}
       {!run.loading && !run.essay && run.raw && (
         <div className="mt-5 reading-surface rounded-2xl p-5">
           <Markdown>{run.raw}</Markdown>

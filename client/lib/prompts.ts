@@ -192,6 +192,17 @@ export function checkCommand(text: string): string {
   return `/check ${text}\n\n${NO_SUGGEST}`;
 }
 
+// Tra nghĩa 1 từ trong essay theo ĐÚNG ngữ cảnh câu. Trả JSON thuần để app parse.
+export function wordLookupCommand(word: string, sentence: string): string {
+  return [
+    `Tra nghĩa của từ tiếng Anh "${word}" khi nó xuất hiện trong câu sau:`,
+    `"${sentence}"`,
+    ``,
+    `CHỈ trả về DUY NHẤT một JSON object (không kèm bất kỳ chữ nào khác, không bọc \`\`\`), đúng dạng:`,
+    `{"word":"<dạng nguyên mẫu của từ>","pos":"<n/v/adj/adv/prep...>","ipa":"<phiên âm IPA>","meaning":"<nghĩa tiếng Việt HỢP với ngữ cảnh câu trên>","example":"<1 câu ví dụ tiếng Anh ngắn, khác câu trên>"}`,
+  ].join("\n");
+}
+
 // Hỏi đáp ngữ pháp nhiều lượt: trả lời ngắn gọn đủ ý, không format icon dài.
 export function grammarChatTurn(question: string): string {
   return [
