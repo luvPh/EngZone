@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Layers, GraduationCap, Sparkles, RotateCcw, Network } from "lucide-react";
+import { Layers, GraduationCap, Sparkles, RotateCcw, Network, ClipboardCheck } from "lucide-react";
 import { PageHeader, Segmented, Button } from "@/components/ui";
 import VocabPractice from "@/components/VocabPractice";
+import CardCarousel from "@/components/CardCarousel";
 import FamilyPractice from "@/components/FamilyPractice";
 import FamilyMindmap from "@/components/FamilyMindmap";
 import { getLibrary } from "@/lib/library";
@@ -14,8 +15,43 @@ import { addVocab, studyBatch, poolStats, type PoolWord } from "@/lib/vocabPool"
 import { getFamilies, studyFamilies, familyStats, type FamilyEntry } from "@/lib/wordFamily";
 import type { FlashSet } from "@/lib/types";
 
-type Phase = "setup" | "playing" | "done";
+type Phase = "setup" | "study" | "playing" | "done";
 type Tab = "vocab" | "family";
+
+// Review the batch as flip cards before the test starts.
+function StudyCards({
+  words,
+  onStart,
+  onBack,
+}: {
+  words: PoolWord[];
+  onStart: () => void;
+  onBack: () => void;
+}) {
+  const cards = words.map((w) => ({
+    word: w.word,
+    meaning: w.meaning,
+    ipa: w.ipa,
+    example: w.example,
+    note: w.pos ? `(${w.pos})` : undefined,
+  }));
+  return (
+    <div className="animate-fade-up">
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-sm text-muted">
+          Ôn lại <span className="font-semibold text-fg">{words.length}</span> từ rồi bấm kiểm tra
+        </p>
+        <button onClick={onBack} className="text-xs text-muted hover:text-fg">
+          Quay lại
+        </button>
+      </div>
+      <CardCarousel cards={cards} />
+      <Button onClick={onStart} className="mt-5 w-full justify-center">
+        <ClipboardCheck size={18} /> Kiểm tra
+      </Button>
+    </div>
+  );
+}
 
 // Bring vocab from previously-generated flashcard sets into the pool (idempotent).
 function seedFromLibrary() {
@@ -89,7 +125,7 @@ export default function PracticePage() {
     if (!b.length) return;
     setBatch(b);
     setLastCorrect(0);
-    setPhase("playing");
+    setPhase("study");
     recordActivity({ feature: "flash", topic: "luyện từ" });
   };
   const finish = (correct: number) => {
@@ -166,6 +202,12 @@ export default function PracticePage() {
               )}
             </div>
           </div>
+        ) : phase === "study" ? (
+          <StudyCards
+            words={batch}
+            onStart={() => setPhase("playing")}
+            onBack={() => setPhase("setup")}
+          />
         ) : phase === "playing" ? (
           <VocabPractice words={batch} onDone={finish} />
         ) : (

@@ -20,8 +20,8 @@ export interface PoolWord {
   addedAt: number;
 }
 
-// A word is "mastered" only after 5 correct answers spanning all 3 test modes.
-export const MASTER_AT = 5;
+// A word is "mastered" only after 10 correct answers spanning all 3 test modes.
+export const MASTER_AT = 10;
 export const ALL_MODES = ["mcq-word", "mcq-meaning", "fill"];
 const KEY = "engzone:vocab:v1";
 
