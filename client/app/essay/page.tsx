@@ -1,9 +1,10 @@
 "use client";
 
-import { FileText, RefreshCw } from "lucide-react";
-import { PageHeader, LevelSlider, Button } from "@/components/ui";
+import { FileText, RefreshCw, BookOpen, Mic } from "lucide-react";
+import { PageHeader, LevelSlider, Button, Segmented } from "@/components/ui";
 import GenForm from "@/components/GenForm";
 import EssayView from "@/components/EssayView";
+import SpeakingReader from "@/components/SpeakingReader";
 import Markdown from "@/components/Markdown";
 import ModelSelector from "@/components/ModelSelector";
 import { useModel } from "@/lib/modelConfig";
@@ -54,6 +55,7 @@ export default function EssayPage() {
     topic: "",
   });
   const [model, setModel] = useModel("essay");
+  const [mode, setMode] = useFeatureState<"read" | "speak">("essay:mode", "read");
 
   const generate = (forceNew = false, resolvedTopic?: string) => {
     if (run.loading) return;
@@ -151,7 +153,25 @@ export default function EssayPage() {
       )}
 
       {!run.loading && run.essay && (
-        <EssayView data={run.essay} provider={model} topic={run.topic} />
+        <>
+          <div className="mt-5">
+            <Segmented
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: "read", label: <><BookOpen size={15} /> Bài đọc</> },
+                { value: "speak", label: <><Mic size={15} /> Luyện nói</> },
+              ]}
+            />
+          </div>
+          {mode === "read" ? (
+            <EssayView data={run.essay} provider={model} topic={run.topic} />
+          ) : (
+            <div className="mt-5">
+              <SpeakingReader text={run.essay.essay} />
+            </div>
+          )}
+        </>
       )}
       {!run.loading && !run.essay && run.raw && (
         <div className="mt-5 reading-surface rounded-2xl p-5">
