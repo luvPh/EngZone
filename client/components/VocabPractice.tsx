@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Check, X, ArrowRight } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
-import { distractors, recordResult, MASTER_AT, ALL_MODES, type PoolWord } from "@/lib/vocabPool";
+import { distractors, recordResult, nextIntervalDays, MASTER_AT, ALL_MODES, type PoolWord } from "@/lib/vocabPool";
 
 type Mode = "mcq-word" | "mcq-meaning" | "fill";
 
@@ -187,11 +187,19 @@ export default function VocabPractice({
                 : w.modes || [];
               const nModes = modes.filter((m) => ALL_MODES.includes(m)).length;
               const done = c >= MASTER_AT && nModes >= ALL_MODES.length;
+              const iv = nextIntervalDays(w, !!result);
               return (
-                <div className="text-xs text-muted mt-1">
-                  Đúng {c}/{MASTER_AT} · dạng {nModes}/{ALL_MODES.length}
-                  {done ? " · đã thuộc 🎉" : ""}
-                </div>
+                <>
+                  <div className="text-xs text-muted mt-1">
+                    Đúng {c}/{MASTER_AT} · dạng {nModes}/{ALL_MODES.length}
+                    {done ? " · đã thuộc 🎉" : ""}
+                  </div>
+                  {!done && (
+                    <div className="text-xs text-accent-soft mt-0.5">
+                      🔁 {result ? `Ôn lại sau ${iv} ngày` : "Ôn lại ngay lượt sau"}
+                    </div>
+                  )}
+                </>
               );
             })()}
             <Button onClick={next} className="mt-3">

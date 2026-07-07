@@ -18,6 +18,23 @@ export interface PoolWord {
   saved?: boolean; // manually saved from essay lookup → shown as its own catalogue
   source?: string; // e.g. essay topic
   addedAt: number;
+  // Spaced-repetition scheduling (SM-2 lite).
+  due?: number; // epoch ms of next review (undefined = brand new, review now)
+  interval?: number; // current interval in days
+  ease?: number; // ease factor (>= 1.3)
+  reps?: number; // consecutive correct reviews
+}
+
+const DAY_MS = 86400000;
+const DEFAULT_EASE = 2.5;
+
+/** Predicted next interval (days) for a review outcome — used to show "ôn lại sau N ngày". */
+export function nextIntervalDays(w: PoolWord, correct: boolean): number {
+  if (!correct) return 0;
+  const ease = w.ease ?? DEFAULT_EASE;
+  const interval = w.interval ?? 0;
+  const reps = (w.reps ?? 0) + 1;
+  return reps === 1 ? 1 : reps === 2 ? 3 : Math.round(interval * ease);
 }
 
 // A word is "mastered" only after 10 correct answers spanning all 3 test modes.
@@ -104,14 +121,21 @@ export function poolStats(): { total: number; mastered: number; learning: number
   return { total: list.length, mastered, learning: list.length - mastered };
 }
 
-/** Random batch of `size` unmastered words (fewer if the pool is smaller). */
+/** Batch of `size` unmastered words, prioritising the ones DUE for review
+ *  (spaced repetition). Due words come first (shuffled), then the soonest-due
+ *  future ones to fill the batch. */
 export function studyBatch(size: number): PoolWord[] {
+  const now = Date.now();
   const pool = read().filter((e) => !e.mastered);
-  for (let i = pool.length - 1; i > 0; i--) {
+  const dueNow = pool.filter((e) => (e.due ?? 0) <= now);
+  for (let i = dueNow.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+    [dueNow[i], dueNow[j]] = [dueNow[j], dueNow[i]];
   }
-  return pool.slice(0, size);
+  const future = pool
+    .filter((e) => (e.due ?? 0) > now)
+    .sort((a, b) => (a.due ?? 0) - (b.due ?? 0));
+  return [...dueNow, ...future].slice(0, size);
 }
 
 /** Record a practice result. Mastered = ≥5 correct AND all 3 modes answered right. */
@@ -120,14 +144,32 @@ export function recordResult(word: string, mode: string, correct: boolean): void
   const e = list.find((x) => norm(x.word) === norm(word));
   if (!e) return;
   if (!Array.isArray(e.modes)) e.modes = [];
+  e.ease = e.ease ?? DEFAULT_EASE;
+  e.reps = e.reps ?? 0;
+  e.interval = e.interval ?? 0;
   if (correct) {
     e.correct += 1;
     if (!e.modes.includes(mode)) e.modes.push(mode);
+    e.reps += 1;
+    e.interval = e.reps === 1 ? 1 : e.reps === 2 ? 3 : Math.round(e.interval * e.ease);
+    e.ease = Math.min(2.6, e.ease + 0.1);
     if (e.correct >= MASTER_AT && ALL_MODES.every((m) => e.modes.includes(m))) {
       e.mastered = true;
     }
+  } else {
+    // Lapse: reset streak, review again this session.
+    e.reps = 0;
+    e.interval = 0;
+    e.ease = Math.max(1.3, e.ease - 0.2);
   }
+  e.due = Date.now() + e.interval * DAY_MS;
   write(list);
+}
+
+/** How many unmastered words are due for review right now (incl. brand-new). */
+export function dueCount(): number {
+  const now = Date.now();
+  return read().filter((e) => !e.mastered && (e.due ?? 0) <= now).length;
 }
 
 /** A few random distractor words (for multiple-choice), excluding `word`. */

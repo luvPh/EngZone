@@ -11,7 +11,7 @@ import FamilyMindmap from "@/components/FamilyMindmap";
 import { getLibrary } from "@/lib/library";
 import { extractJson } from "@/lib/extractJson";
 import { recordActivity } from "@/lib/storage";
-import { addVocab, studyBatch, poolStats, type PoolWord } from "@/lib/vocabPool";
+import { addVocab, studyBatch, poolStats, dueCount, type PoolWord } from "@/lib/vocabPool";
 import { getFamilies, studyFamilies, familyStats, type FamilyEntry } from "@/lib/wordFamily";
 import type { FlashSet } from "@/lib/types";
 
@@ -101,6 +101,7 @@ export default function PracticePage() {
   const [batch, setBatch] = useState<PoolWord[]>([]);
   const [lastCorrect, setLastCorrect] = useState(0);
   const [stats, setStats] = useState({ total: 0, mastered: 0, learning: 0 });
+  const [due, setDue] = useState(0);
 
   // Word-family (form transformation) practice
   const [fPhase, setFPhase] = useState<Phase>("setup");
@@ -111,6 +112,7 @@ export default function PracticePage() {
 
   const refresh = () => {
     setStats(poolStats());
+    setDue(dueCount());
     setFStats(familyStats());
     setFamilies(getFamilies());
   };
@@ -184,6 +186,13 @@ export default function PracticePage() {
                 <p className="text-muted text-sm">Bạn đã thuộc tất cả! Tạo thêm Vocab with Essay để có từ mới.</p>
               ) : (
                 <>
+                  <div className="mb-3 text-sm">
+                    {due > 0 ? (
+                      <span className="text-accent-soft font-semibold">🔁 {due} từ đến hạn ôn hôm nay</span>
+                    ) : (
+                      <span className="text-muted">Chưa có từ đến hạn — ôn sớm cũng được 👍</span>
+                    )}
+                  </div>
                   <div className="text-sm font-medium text-muted mb-1.5">Số từ mỗi lượt</div>
                   <Segmented
                     fullWidth
