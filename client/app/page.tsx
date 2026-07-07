@@ -10,6 +10,8 @@ import {
   BookOpen,
   Layers,
   SpellCheck,
+  BarChart3,
+  ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
@@ -85,7 +87,15 @@ export default function HomePage() {
 
       {/* Weekly calendar */}
       <div className="glass rounded-card px-[22px] py-5 mb-10">
-        <div className="text-[13px] text-muted mb-3.5 font-medium">7 ngày gần đây</div>
+        <div className="flex items-center justify-between mb-3.5">
+          <div className="text-[13px] text-muted font-medium">7 ngày gần đây</div>
+          <Link
+            href="/stats"
+            className="inline-flex items-center gap-1 text-[13px] text-accent font-medium hover:opacity-80"
+          >
+            <BarChart3 size={14} /> Thống kê <ChevronRight size={14} />
+          </Link>
+        </div>
         <div className="flex gap-2.5">
           {(mounted ? week : DOW.map((_, i) => ({ date: String(i), active: false }))).map(
             (d, i) => (

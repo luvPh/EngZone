@@ -79,6 +79,24 @@ export function currentStreak(): number {
   return streak;
 }
 
+/** Activity counts per day for the last `n` days (oldest→newest). */
+export function dailyCounts(n: number): { date: string; count: number }[] {
+  const map = new Map<string, number>();
+  for (const r of read()) {
+    const k = dayKey(r.at);
+    map.set(k, (map.get(k) || 0) + 1);
+  }
+  const out: { date: string; count: number }[] = [];
+  const cursor = new Date();
+  cursor.setDate(cursor.getDate() - (n - 1));
+  for (let i = 0; i < n; i++) {
+    const k = dayKey(cursor.getTime());
+    out.push({ date: k, count: map.get(k) || 0 });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return out;
+}
+
 /** Last 7 day-keys (oldest→newest) with active flag, for a mini calendar. */
 export function last7Days(): { date: string; active: boolean }[] {
   const days = new Set(activeDays());
