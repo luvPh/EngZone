@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Layers, GraduationCap, Sparkles, RotateCcw, Network, ClipboardCheck } from "lucide-react";
+import { Layers, GraduationCap, Sparkles, RotateCcw, Network, ClipboardCheck, Headphones, Mic } from "lucide-react";
 import { PageHeader, Segmented, Button } from "@/components/ui";
 import VocabPractice from "@/components/VocabPractice";
 import CardCarousel from "@/components/CardCarousel";
+import DictationPractice from "@/components/DictationPractice";
+import SpeakingPractice from "@/components/SpeakingPractice";
 import FamilyPractice from "@/components/FamilyPractice";
 import FamilyMindmap from "@/components/FamilyMindmap";
 import { getLibrary } from "@/lib/library";
@@ -16,7 +18,7 @@ import { getFamilies, studyFamilies, familyStats, type FamilyEntry } from "@/lib
 import type { FlashSet } from "@/lib/types";
 
 type Phase = "setup" | "study" | "playing" | "done";
-type Tab = "vocab" | "family";
+type Tab = "vocab" | "family" | "dictation" | "speaking";
 
 // Review the batch as flip cards before the test starts.
 function StudyCards({
@@ -167,6 +169,8 @@ export default function PracticePage() {
           options={[
             { value: "vocab", label: <><Layers size={15} /> Ôn nghĩa</> },
             { value: "family", label: <><Network size={15} /> Họ từ</> },
+            { value: "dictation", label: <><Headphones size={15} /> Nghe chép</> },
+            { value: "speaking", label: <><Mic size={15} /> Nói</> },
           ]}
         />
       </div>
@@ -232,6 +236,10 @@ export default function PracticePage() {
             </div>
           </div>
         )
+      ) : tab === "dictation" ? (
+        <DictationPractice />
+      ) : tab === "speaking" ? (
+        <SpeakingPractice />
       ) : fStats.total === 0 ? (
         <EmptyCTA what="Chưa có họ từ nào" />
       ) : fPhase === "playing" ? (
