@@ -12,6 +12,7 @@ import {
   SpellCheck,
   type LucideIcon,
 } from "lucide-react";
+import AuthButton from "@/components/AuthButton";
 import { getActivity, currentStreak, last7Days, countsByFeature } from "@/lib/storage";
 
 const FEATURES: {
@@ -48,6 +49,11 @@ export default function HomePage() {
 
   return (
     <div className="animate-fade-up">
+      {/* Mobile-only sync login (sidebar handles it on desktop) */}
+      <div className="md:hidden flex justify-end mb-4 [&_button]:w-full [&>div]:w-full">
+        <AuthButton />
+      </div>
+
       <div className="text-[13px] text-accent font-semibold tracking-[.04em] uppercase mb-2.5">
         {mounted ? greeting() : "Chào bạn, An"}
       </div>
