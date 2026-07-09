@@ -114,7 +114,7 @@ export default function EssayPage() {
   return (
     <div className="animate-fade-up">
       <PageHeader
-        title="Vocab with Essay"
+        title="Essay"
         subtitle="Tạo bài essay + bộ từ vựng (tự lưu vào kho để Luyện từ)."
         icon={<FileText size={20} />}
         right={<ModelSelector value={model} onChange={setModel} />}

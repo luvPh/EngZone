@@ -22,7 +22,7 @@ import { currentStreak } from "@/lib/storage";
 const TABS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Trang chủ", icon: Home },
   { href: "/quiz", label: "Luyện đề", icon: ListChecks },
-  { href: "/essay", label: "Vocab + Essay", icon: FileText },
+  { href: "/essay", label: "Essay", icon: FileText },
   { href: "/grammar", label: "Grammar", icon: BookOpen },
   { href: "/flashcard", label: "Luyện từ", icon: Layers },
   { href: "/check", label: "Check", icon: SpellCheck },

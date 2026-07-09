@@ -7,7 +7,7 @@ import { useTheme } from "@/components/ThemeProvider";
 const CRUMBS: Record<string, string> = {
   "/": "Trang chủ",
   "/quiz": "Luyện đề",
-  "/essay": "Vocab + Essay",
+  "/essay": "Essay",
   "/grammar": "Grammar",
   "/flashcard": "Luyện từ",
   "/check": "Check",

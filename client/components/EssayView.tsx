@@ -96,6 +96,11 @@ export default function EssayView({
     setAdded((a) => ({ ...a, [surfaceWord.toLowerCase()]: true }));
   };
 
+  // Vocab (từ mới) to highlight in the prose — matched by base form + inflections.
+  const vocabWords = new Set(
+    (data.vocab ?? []).map((v) => v.word.trim().toLowerCase()).filter(Boolean)
+  );
+
   return (
     <div className="mt-5 space-y-5 animate-fade-up">
       <div className="reading-surface rounded-2xl p-5">
@@ -103,13 +108,17 @@ export default function EssayView({
           <h2 className="text-lg font-bold text-fg">Essay</h2>
           <span className="text-xs text-muted">Bấm vào từ bất kỳ để tra nghĩa</span>
         </div>
-        <ClickableEssay text={data.essay} onWordClick={onWordClick} />
+        <ClickableEssay
+          text={data.essay}
+          onWordClick={onWordClick}
+          highlight={vocabWords}
+        />
       </div>
 
       {data.vocab?.length > 0 && (
         <div className="reading-surface rounded-2xl p-5">
           <h2 className="text-lg font-bold text-fg mb-3">
-            Vocabulary{" "}
+            Từ vựng{" "}
             <span className="text-muted text-sm font-normal">
               ({data.vocab.length} từ)
             </span>
@@ -147,14 +156,28 @@ export default function EssayView({
   );
 }
 
+// True if a surface word is one of the vocab words (base form) or an inflection
+// of it (e.g. "offsetting" for base "offset").
+function isVocabWord(word: string, bases: Set<string>): boolean {
+  const w = word.toLowerCase();
+  if (bases.has(w)) return true;
+  for (const b of bases) {
+    if (b.length >= 4 && w.startsWith(b)) return true;
+  }
+  return false;
+}
+
 // Renders essay prose: each English word becomes a clickable, hover-highlighted
-// span; whitespace/punctuation/newlines are preserved verbatim.
+// span; whitespace/punctuation/newlines are preserved verbatim. Vocab (new) words
+// get a persistent coral highlight so learners can spot them at a glance.
 function ClickableEssay({
   text,
   onWordClick,
+  highlight,
 }: {
   text: string;
   onWordClick: (e: React.MouseEvent, word: string, sentence: string) => void;
+  highlight?: Set<string>;
 }) {
   return (
     <p className="text-fg whitespace-pre-wrap leading-[1.9]">
@@ -165,7 +188,11 @@ function ClickableEssay({
             role="button"
             tabIndex={0}
             onClick={(e) => onWordClick(e, tok.text, tok.sentence)}
-            className="cursor-pointer rounded px-0.5 -mx-0.5 transition-colors hover:bg-accent-weak hover:text-accent"
+            className={`cursor-pointer rounded px-0.5 -mx-0.5 transition-colors hover:bg-accent-weak hover:text-accent ${
+              highlight && isVocabWord(tok.text, highlight)
+                ? "bg-accent-weak text-accent font-medium"
+                : ""
+            }`}
           >
             {tok.text}
           </span>

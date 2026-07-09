@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, X, ArrowRight } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
 import { distractors, recordResult, nextIntervalDays, MASTER_AT, ALL_MODES, type PoolWord } from "@/lib/vocabPool";
@@ -90,6 +90,24 @@ export default function VocabPractice({
     setResult(null);
   };
 
+  // Enter: nộp câu trả lời (khi chưa nộp) → sau đó Enter lần nữa để sang câu tiếp.
+  // Dùng listener toàn cục vì input bị disable sau khi nộp (không nhận keydown nữa).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      if (result !== null) {
+        e.preventDefault();
+        next();
+      } else if (q.mode === "fill" && input.trim()) {
+        e.preventDefault();
+        onFill();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, input, q.mode, idx, correctCount]);
+
   return (
     <div className="animate-fade-up">
       {/* progress */}
@@ -132,7 +150,6 @@ export default function VocabPractice({
             <TextInput
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (result === null ? onFill() : next())}
               placeholder="Gõ từ tiếng Anh…"
               disabled={result !== null}
               autoFocus

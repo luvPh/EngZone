@@ -25,7 +25,7 @@ const FEATURES: {
   key: string;
 }[] = [
   { href: "/quiz", label: "Luyện đề", icon: ListChecks, desc: "Đề thi thử đa dạng", key: "quiz" },
-  { href: "/essay", label: "Vocab + Essay", icon: FileText, desc: "Essay kèm thẻ từ vựng", key: "essay" },
+  { href: "/essay", label: "Essay", icon: FileText, desc: "Essay kèm thẻ từ vựng", key: "essay" },
   { href: "/grammar", label: "Grammar", icon: BookOpen, desc: "Giải thích ngữ pháp", key: "grammar" },
   { href: "/flashcard", label: "Luyện từ", icon: Layers, desc: "Ôn từ vựng bằng thẻ", key: "flash" },
   { href: "/check", label: "Check", icon: SpellCheck, desc: "Sửa lỗi tiếng Anh", key: "check" },

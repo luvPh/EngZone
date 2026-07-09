@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, X, ArrowRight } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
 import { recordFamilyResult, FAMILY_MASTER_AT, type FamilyEntry } from "@/lib/wordFamily";
@@ -50,6 +50,24 @@ export default function FamilyPractice({
     setResult(null);
   };
 
+  // Enter: nộp (khi chưa nộp) → Enter lần nữa để sang câu tiếp. Listener toàn cục
+  // vì input bị disable sau khi nộp nên không nhận keydown nữa.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      if (result !== null) {
+        e.preventDefault();
+        next();
+      } else if (input.trim()) {
+        e.preventDefault();
+        submit();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, input, idx, correctCount]);
+
   return (
     <div className="animate-fade-up">
       <div className="flex items-center justify-between text-xs text-muted mb-3">
@@ -83,7 +101,6 @@ export default function FamilyPractice({
         <TextInput
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && (result === null ? submit() : next())}
           placeholder="Gõ dạng từ…"
           disabled={result !== null}
           autoFocus
