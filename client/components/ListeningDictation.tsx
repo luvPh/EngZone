@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Volume2, Gauge, ArrowRight, RotateCcw, Check } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
+import { useFeatureState } from "@/lib/store";
 import { normWord, splitSentences, scoreSentence } from "@/lib/textDiff";
 
 function speak(text: string, rate: number) {
@@ -18,70 +19,86 @@ interface Graded {
   matched: boolean[];
   score: number;
 }
+interface LState {
+  sig: string; // which passage this run belongs to
+  idx: number;
+  input: string;
+  graded: Graded | null;
+  scores: number[];
+  done: boolean;
+  slow: boolean;
+}
+const INIT: LState = { sig: "", idx: 0, input: "", graded: null, scores: [], done: false, slow: false };
+
+const sigOf = (t: string) => `${t.length}|${t.slice(0, 40)}`;
 
 // Listen to each sentence of the essay and type it back. Graded word-by-word
-// against the original (no AI needed — TTS + local diff).
+// against the original (no AI needed — TTS + local diff). Progress lives in the
+// app store so switching tabs keeps the run; it resets on a new essay, an
+// explicit restart, or a full page reload.
 export default function ListeningDictation({ text }: { text: string }) {
-  const sentences = useRef(splitSentences(text)).current;
-  const [idx, setIdx] = useState(0);
-  const [input, setInput] = useState("");
-  const [graded, setGraded] = useState<Graded | null>(null);
-  const [scores, setScores] = useState<number[]>([]);
-  const [slow, setSlow] = useState(false);
-  const [done, setDone] = useState(false);
+  const sentences = useRef(splitSentences(text));
+  sentences.current = splitSentences(text);
+  const sig = sigOf(text);
+  const [st, setSt] = useFeatureState<LState>("essay:listen", INIT);
+  const patch = (p: Partial<LState>) => setSt((prev) => ({ ...prev, ...p }));
 
-  const sentence = sentences[idx];
-  const rate = slow ? 0.7 : 1;
+  // New passage → start a fresh run.
+  useEffect(() => {
+    if (st.sig !== sig) setSt({ ...INIT, sig });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig]);
+
+  const list = sentences.current;
+  const idx = Math.min(st.idx, Math.max(0, list.length - 1));
+  const sentence = list[idx];
 
   // Auto-play each new sentence.
   const played = useRef(-1);
   useEffect(() => {
     if (sentence && played.current !== idx) {
       played.current = idx;
-      speak(sentence, slow ? 0.7 : 1);
+      speak(sentence, st.slow ? 0.7 : 1);
     }
-  }, [idx, sentence, slow]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx, sentence]);
 
   useEffect(() => {
     return () => window.speechSynthesis?.cancel();
   }, []);
 
-  if (sentences.length === 0) {
+  if (list.length === 0) {
     return <p className="text-muted text-sm">Không tách được câu để nghe chép.</p>;
   }
 
-  const total = sentences.length;
+  const total = list.length;
   const isLast = idx === total - 1;
   const displayTokens = sentence.match(/\S+/g) ?? [];
+  const rate = st.slow ? 0.7 : 1;
 
   const submit = () => {
-    if (graded || !input.trim()) return;
-    const { matched, score } = scoreSentence(sentence, input);
-    setGraded({ matched, score });
-    setScores((s) => [...s, score]);
+    if (st.graded || !st.input.trim()) return;
+    const { matched, score } = scoreSentence(sentence, st.input);
+    setSt((prev) => ({ ...prev, graded: { matched, score }, scores: [...prev.scores, score] }));
   };
 
   const next = () => {
     if (isLast) {
-      setDone(true);
+      patch({ done: true });
       return;
     }
-    setIdx((i) => i + 1);
-    setInput("");
-    setGraded(null);
+    patch({ idx: idx + 1, input: "", graded: null });
   };
 
   const restart = () => {
-    setIdx(0);
-    setInput("");
-    setGraded(null);
-    setScores([]);
-    setDone(false);
+    setSt({ ...INIT, sig });
     played.current = -1;
   };
 
-  if (done) {
-    const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+  if (st.done) {
+    const avg = st.scores.length
+      ? Math.round(st.scores.reduce((a, b) => a + b, 0) / st.scores.length)
+      : 0;
     return (
       <div className="glass rounded-2xl p-6 text-center animate-fade-up">
         <div className="text-4xl font-extrabold text-accent">{avg}%</div>
@@ -97,9 +114,9 @@ export default function ListeningDictation({ text }: { text: string }) {
     <div className="animate-fade-up">
       <div className="flex items-center justify-between text-xs text-muted mb-3">
         <span>Câu {idx + 1} / {total}</span>
-        {graded && (
-          <span className={graded.score >= 80 ? "text-ok" : graded.score >= 50 ? "text-accent-soft" : "text-bad"}>
-            Đúng {graded.score}%
+        {st.graded && (
+          <span className={st.graded.score >= 80 ? "text-ok" : st.graded.score >= 50 ? "text-accent-soft" : "text-bad"}>
+            Đúng {st.graded.score}%
           </span>
         )}
       </div>
@@ -125,30 +142,30 @@ export default function ListeningDictation({ text }: { text: string }) {
           <button
             type="button"
             onClick={() => {
-              setSlow((s) => !s);
-              speak(sentence, slow ? 1 : 0.7);
+              patch({ slow: !st.slow });
+              speak(sentence, st.slow ? 1 : 0.7);
             }}
-            aria-pressed={slow}
+            aria-pressed={st.slow}
             className={`px-4 rounded-2xl border transition text-sm font-medium ${
-              slow ? "bg-accent text-white border-transparent" : "glass-input text-muted"
+              st.slow ? "bg-accent text-white border-transparent" : "glass-input text-muted"
             }`}
           >
             <Gauge size={18} className="mx-auto" />
-            {slow ? "Chậm" : "Bình thường"}
+            {st.slow ? "Chậm" : "Bình thường"}
           </button>
         </div>
 
         <TextInput
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && (!graded ? submit() : next())}
+          value={st.input}
+          onChange={(e) => patch({ input: e.target.value })}
+          onKeyDown={(e) => e.key === "Enter" && (!st.graded ? submit() : next())}
           placeholder="Gõ câu bạn nghe được…"
-          disabled={!!graded}
+          disabled={!!st.graded}
           autoFocus
         />
 
-        {!graded ? (
-          <Button onClick={submit} disabled={!input.trim()} className="mt-3">
+        {!st.graded ? (
+          <Button onClick={submit} disabled={!st.input.trim()} className="mt-3">
             Kiểm tra
           </Button>
         ) : (
@@ -158,7 +175,7 @@ export default function ListeningDictation({ text }: { text: string }) {
               {displayTokens.map((tok, k) => {
                 let cls = "text-fg";
                 if (normWord(tok)) {
-                  cls = graded.matched[k]
+                  cls = st.graded!.matched[k]
                     ? "text-ok"
                     : "text-bad underline decoration-wavy decoration-bad/60";
                 }
@@ -170,7 +187,7 @@ export default function ListeningDictation({ text }: { text: string }) {
               })}
             </p>
             <div className="flex gap-2 mt-3">
-              <Button variant="ghost" onClick={() => { setGraded(null); setInput(""); }}>
+              <Button variant="ghost" onClick={() => patch({ graded: null, input: "" })}>
                 <RotateCcw size={15} /> Thử lại câu
               </Button>
               <Button onClick={next}>

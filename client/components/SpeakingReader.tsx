@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, Mic, MicOff, ArrowRight, RotateCcw, Check } from "lucide-react";
 import { Button } from "@/components/ui";
+import { useFeatureState } from "@/lib/store";
 import { normWord, splitSentences, scoreSentence } from "@/lib/textDiff";
 
 function speak(text: string) {
@@ -26,21 +27,43 @@ interface Graded {
   score: number; // 0..100 over real words
   heard: string;
 }
+interface SState {
+  sig: string; // which passage this run belongs to
+  idx: number;
+  graded: Graded | null;
+  scores: number[];
+  done: boolean;
+}
+const INIT: SState = { sig: "", idx: 0, graded: null, scores: [], done: false };
+const sigOf = (t: string) => `${t.length}|${t.slice(0, 40)}`;
 
 // Read an essay aloud sentence-by-sentence; browser speech-recognition transcribes
 // each read and we mark which words were said correctly (word-level, via LCS).
+// Progress lives in the app store so switching tabs keeps the run — it resets on
+// a new essay, an explicit restart, or a full page reload.
 export default function SpeakingReader({ text }: { text: string }) {
   const SR = getSR();
-  const sentences = useRef(splitSentences(text)).current;
-  const [idx, setIdx] = useState(0);
+  const sentencesRef = useRef(splitSentences(text));
+  sentencesRef.current = splitSentences(text);
+  const sentences = sentencesRef.current;
+  const sig = sigOf(text);
+  const [st, setSt] = useFeatureState<SState>("essay:speak", INIT);
+  const patch = (p: Partial<SState>) => setSt((prev) => ({ ...prev, ...p }));
+  // Transient recognition state stays local — it must not survive a remount.
   const [status, setStatus] = useState<"idle" | "listening">("idle");
   const [interim, setInterim] = useState("");
-  const [graded, setGraded] = useState<Graded | null>(null);
-  const [scores, setScores] = useState<number[]>([]);
-  const [done, setDone] = useState(false);
   const [err, setErr] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recRef = useRef<any>(null);
+
+  const idx = Math.min(st.idx, Math.max(0, sentences.length - 1));
+  const graded = st.graded;
+
+  // New passage → start a fresh run.
+  useEffect(() => {
+    if (st.sig !== sig) setSt({ ...INIT, sig });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig]);
 
   useEffect(() => {
     return () => {
@@ -73,8 +96,11 @@ export default function SpeakingReader({ text }: { text: string }) {
 
   const grade = (transcript: string) => {
     const { matched, score } = scoreSentence(sentence, transcript);
-    setGraded({ matched, score, heard: transcript.trim() });
-    setScores((s) => [...s, score]);
+    setSt((prev) => ({
+      ...prev,
+      graded: { matched, score, heard: transcript.trim() },
+      scores: [...prev.scores, score],
+    }));
   };
 
   const listen = () => {
@@ -124,25 +150,23 @@ export default function SpeakingReader({ text }: { text: string }) {
 
   const next = () => {
     if (isLast) {
-      setDone(true);
+      patch({ done: true });
       return;
     }
-    setIdx((i) => i + 1);
-    setGraded(null);
+    patch({ idx: idx + 1, graded: null });
     setErr("");
   };
 
   const restart = () => {
-    setIdx(0);
-    setGraded(null);
-    setScores([]);
-    setDone(false);
+    setSt({ ...INIT, sig });
     setStatus("idle");
     setErr("");
   };
 
-  if (done) {
-    const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+  if (st.done) {
+    const avg = st.scores.length
+      ? Math.round(st.scores.reduce((a, b) => a + b, 0) / st.scores.length)
+      : 0;
     return (
       <div className="glass rounded-2xl p-6 text-center animate-fade-up">
         <div className="text-4xl font-extrabold text-accent">{avg}%</div>
@@ -223,7 +247,7 @@ export default function SpeakingReader({ text }: { text: string }) {
               Máy nghe được: <span className="text-fg">{graded.heard || "(không rõ)"}</span>
             </div>
             <div className="flex gap-2 mt-3">
-              <Button variant="ghost" onClick={() => setGraded(null)}>
+              <Button variant="ghost" onClick={() => patch({ graded: null })}>
                 <RotateCcw size={15} /> Đọc lại câu
               </Button>
               <Button onClick={next}>

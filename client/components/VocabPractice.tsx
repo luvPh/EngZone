@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { Check, X, ArrowRight } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
+import { useFeatureState } from "@/lib/store";
 import { distractors, recordResult, nextIntervalDays, MASTER_AT, ALL_MODES, type PoolWord } from "@/lib/vocabPool";
 
 type Mode = "mcq-word" | "mcq-meaning" | "fill";
@@ -40,6 +41,19 @@ function buildQuestion(w: PoolWord): Question {
   return { mode, options: mode.startsWith("mcq") ? shuffle([w, ...others]) : [] };
 }
 
+interface VState {
+  sig: string; // which batch this run belongs to
+  idx: number;
+  picked: string | null; // chosen word (mcq) or "submitted" (fill)
+  input: string;
+  result: null | boolean;
+  correctCount: number;
+  q: Question | null;
+}
+const INIT: VState = { sig: "", idx: 0, picked: null, input: "", result: null, correctCount: 0, q: null };
+
+// The run lives in the app store so switching tabs keeps the current question,
+// answer and score — it only restarts on a new batch or a full page reload.
 export default function VocabPractice({
   words,
   onDone,
@@ -47,35 +61,44 @@ export default function VocabPractice({
   words: PoolWord[];
   onDone: (correct: number) => void;
 }) {
-  const [idx, setIdx] = useState(0);
-  const [picked, setPicked] = useState<string | null>(null); // chosen word (mcq) or "submitted" (fill)
-  const [input, setInput] = useState("");
-  const [result, setResult] = useState<null | boolean>(null);
-  const [correctCount, setCorrectCount] = useState(0);
+  const sig = words.map((x) => x.word).join("|");
+  const [st, setSt] = useFeatureState<VState>("flash:vocabq", INIT);
+  const patch = (p: Partial<VState>) => setSt((prev) => ({ ...prev, ...p }));
 
+  // New batch → fresh run (and build its first question once).
+  useEffect(() => {
+    if (st.sig !== sig && words.length) {
+      setSt({ ...INIT, sig, q: buildQuestion(words[0]) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig]);
+
+  const idx = Math.min(st.idx, Math.max(0, words.length - 1));
   const w = words[idx];
-  const q = useMemo(() => buildQuestion(w), [idx]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!w) return null;
+  const q = st.q;
+  const { result, input, picked, correctCount } = st;
 
   const total = words.length;
   const isLast = idx === total - 1;
 
   const grade = (ok: boolean) => {
-    if (result !== null) return;
-    setResult(ok);
-    if (ok) setCorrectCount((c) => c + 1);
+    if (result !== null || !q) return;
+    setSt((prev) => ({
+      ...prev,
+      result: ok,
+      correctCount: prev.correctCount + (ok ? 1 : 0),
+    }));
     recordResult(w.word, q.mode, ok);
   };
 
   const onMcq = (chosen: PoolWord) => {
     if (result !== null) return;
-    setPicked(chosen.word);
+    patch({ picked: chosen.word });
     grade(normalize(chosen.word) === normalize(w.word));
   };
   const onFill = () => {
     if (result !== null || !input.trim()) return;
-    setPicked("submitted");
+    patch({ picked: "submitted" });
     grade(normalize(input) === normalize(w.word));
   };
 
@@ -84,10 +107,7 @@ export default function VocabPractice({
       onDone(correctCount);
       return;
     }
-    setIdx((i) => i + 1);
-    setPicked(null);
-    setInput("");
-    setResult(null);
+    patch({ idx: idx + 1, picked: null, input: "", result: null, q: buildQuestion(words[idx + 1]) });
   };
 
   // Enter: nộp câu trả lời (khi chưa nộp) → sau đó Enter lần nữa để sang câu tiếp.
@@ -98,7 +118,7 @@ export default function VocabPractice({
       if (result !== null) {
         e.preventDefault();
         next();
-      } else if (q.mode === "fill" && input.trim()) {
+      } else if (q?.mode === "fill" && input.trim()) {
         e.preventDefault();
         onFill();
       }
@@ -106,7 +126,9 @@ export default function VocabPractice({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, input, q.mode, idx, correctCount]);
+  }, [result, input, q?.mode, idx, correctCount]);
+
+  if (!w || !q) return null;
 
   return (
     <div className="animate-fade-up">
@@ -149,7 +171,7 @@ export default function VocabPractice({
           <div className="mt-3 space-y-3">
             <TextInput
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => patch({ input: e.target.value })}
               placeholder="Gõ từ tiếng Anh…"
               disabled={result !== null}
               autoFocus

@@ -9,6 +9,7 @@ import CardCarousel from "@/components/CardCarousel";
 import DictationPractice from "@/components/DictationPractice";
 import FamilyPractice from "@/components/FamilyPractice";
 import FamilyMindmap from "@/components/FamilyMindmap";
+import { useFeatureState } from "@/lib/store";
 import { getLibrary } from "@/lib/library";
 import { extractJson } from "@/lib/extractJson";
 import { recordActivity } from "@/lib/storage";
@@ -94,20 +95,22 @@ const EmptyCTA = ({ what }: { what: string }) => (
 
 export default function PracticePage() {
   const [mounted, setMounted] = useState(false);
-  const [tab, setTab] = useState<Tab>("vocab");
+  // Session state lives in the app store so switching tabs never loses a run —
+  // it only resets on a full page reload.
+  const [tab, setTab] = useFeatureState<Tab>("flash:tab", "vocab");
 
   // Vocab (meaning) practice
-  const [phase, setPhase] = useState<Phase>("setup");
-  const [size, setSize] = useState<10 | 15 | 20>(10);
-  const [batch, setBatch] = useState<PoolWord[]>([]);
-  const [lastCorrect, setLastCorrect] = useState(0);
+  const [phase, setPhase] = useFeatureState<Phase>("flash:phase", "setup");
+  const [size, setSize] = useFeatureState<10 | 15 | 20>("flash:size", 10);
+  const [batch, setBatch] = useFeatureState<PoolWord[]>("flash:batch", []);
+  const [lastCorrect, setLastCorrect] = useFeatureState("flash:lastCorrect", 0);
   const [stats, setStats] = useState({ total: 0, mastered: 0, learning: 0 });
   const [due, setDue] = useState(0);
 
   // Word-family (form transformation) practice
-  const [fPhase, setFPhase] = useState<Phase>("setup");
-  const [fBatch, setFBatch] = useState<FamilyEntry[]>([]);
-  const [fLast, setFLast] = useState(0);
+  const [fPhase, setFPhase] = useFeatureState<Phase>("flash:fPhase", "setup");
+  const [fBatch, setFBatch] = useFeatureState<FamilyEntry[]>("flash:fBatch", []);
+  const [fLast, setFLast] = useFeatureState("flash:fLast", 0);
   const [fStats, setFStats] = useState({ total: 0, mastered: 0, learning: 0 });
   const [families, setFamilies] = useState<FamilyEntry[]>([]);
 

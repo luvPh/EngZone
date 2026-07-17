@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Loader2, ArrowRight, RotateCcw, Check, Languages, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui";
+import { useFeatureState } from "@/lib/store";
 import { runCommand } from "@/lib/stream";
 import { translateSentencesCommand, gradeTranslationCommand } from "@/lib/prompts";
 import { extractJson } from "@/lib/extractJson";
@@ -22,6 +23,32 @@ interface Grade {
   comment?: string;
 }
 
+interface TState {
+  sig: string; // topic|level this set was generated for
+  sentences: string[];
+  idx: number;
+  input: string;
+  grade: Grade | null;
+  grading: boolean;
+  scores: number[];
+  done: boolean;
+  loading: boolean;
+  err: string;
+}
+
+const INIT: TState = {
+  sig: "",
+  sentences: [],
+  idx: 0,
+  input: "",
+  grade: null,
+  grading: false,
+  scores: [],
+  done: false,
+  loading: false,
+  err: "",
+};
+
 const TYPE_VI: Record<string, string> = {
   grammar: "Ngữ pháp",
   vocabulary: "Từ vựng",
@@ -30,7 +57,10 @@ const TYPE_VI: Record<string, string> = {
 };
 
 // Vietnamese → English translation drill. Sentences are generated from the
-// essay's topic/level; each answer is graded by the AI right away.
+// essay's topic/level; each answer is graded by the AI right away. The whole
+// session lives in the app store, so switching tabs never re-generates (which
+// would both lose progress and burn AI quota) — only a new topic, an explicit
+// "Bộ câu mới", or a full page reload starts over.
 export default function TranslatePractice({
   topic,
   level,
@@ -40,20 +70,12 @@ export default function TranslatePractice({
   level: number;
   provider?: string;
 }) {
-  const [sentences, setSentences] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [genErr, setGenErr] = useState("");
-  const [idx, setIdx] = useState(0);
-  const [input, setInput] = useState("");
-  const [grading, setGrading] = useState(false);
-  const [grade, setGrade] = useState<Grade | null>(null);
-  const [scores, setScores] = useState<number[]>([]);
-  const [done, setDone] = useState(false);
+  const [st, setSt] = useFeatureState<TState>("essay:translate", INIT);
+  const patch = (p: Partial<TState>) => setSt((prev) => ({ ...prev, ...p }));
+  const sig = `${topic}|${level}`;
 
-  const generate = () => {
-    setLoading(true);
-    setGenErr("");
-    setSentences([]);
+  const generate = (forSig: string) => {
+    setSt({ ...INIT, sig: forSig, loading: true });
     runCommand(
       "essay-translate-gen",
       translateSentencesCommand(topic, level, COUNT),
@@ -62,22 +84,26 @@ export default function TranslatePractice({
         onDone: (full) => {
           const obj = extractJson<{ sentences: string[] }>(full);
           const list = (obj?.sentences ?? []).filter((s) => typeof s === "string" && s.trim());
-          if (!list.length) setGenErr("Không tạo được câu, thử lại nhé.");
-          setSentences(list);
-          setLoading(false);
+          patch({
+            sentences: list,
+            loading: false,
+            err: list.length ? "" : "Không tạo được câu, thử lại nhé.",
+          });
         },
-        onError: (m) => {
-          setGenErr(m);
-          setLoading(false);
-        },
+        onError: (m) => patch({ err: m, loading: false }),
       },
       { provider, maxTokens: 1200 }
     );
   };
 
-  useEffect(generate, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Generate only for a topic/level we haven't got a set for yet.
+  useEffect(() => {
+    if (st.sig !== sig) generate(sig);
+    else if (!st.sentences.length && !st.loading && !st.err) generate(sig);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig]);
 
-  if (loading) {
+  if (st.loading) {
     return (
       <div className="mt-5 flex items-center gap-2 text-muted text-sm">
         <Loader2 size={16} className="animate-spin" /> Đang tạo câu tiếng Việt về “{topic}”…
@@ -85,40 +111,42 @@ export default function TranslatePractice({
     );
   }
 
-  if (genErr || sentences.length === 0) {
+  if (st.err || st.sentences.length === 0) {
     return (
       <div className="reading-surface rounded-2xl p-6 text-center">
-        <p className="text-bad text-sm mb-3">{genErr || "Chưa có câu nào."}</p>
-        <Button onClick={generate}>
+        <p className="text-bad text-sm mb-3">{st.err || "Chưa có câu nào."}</p>
+        <Button onClick={() => generate(sig)}>
           <RotateCcw size={16} /> Thử lại
         </Button>
       </div>
     );
   }
 
-  const total = sentences.length;
+  const total = st.sentences.length;
+  const idx = Math.min(st.idx, total - 1);
   const isLast = idx === total - 1;
-  const vi = sentences[idx];
+  const vi = st.sentences[idx];
 
   const submit = () => {
-    if (grading || grade || !input.trim()) return;
-    setGrading(true);
+    if (st.grading || st.grade || !st.input.trim()) return;
+    patch({ grading: true });
     runCommand(
       "essay-translate-grade",
-      gradeTranslationCommand(vi, input.trim()),
+      gradeTranslationCommand(vi, st.input.trim()),
       {
         onText: () => {},
         onDone: (full) => {
           const g = extractJson<Grade>(full);
           const score = typeof g?.score === "number" ? Math.max(0, Math.min(10, g.score)) : 0;
-          setGrade(g ? { ...g, score } : { score: 0, comment: "Không chấm được, thử lại nhé." });
-          setScores((s) => [...s, score]);
-          setGrading(false);
+          setSt((prev) => ({
+            ...prev,
+            grade: g ? { ...g, score } : { score: 0, comment: "Không chấm được, thử lại nhé." },
+            scores: [...prev.scores, score],
+            grading: false,
+          }));
         },
-        onError: () => {
-          setGrade({ score: 0, comment: "Không chấm được, thử lại nhé." });
-          setGrading(false);
-        },
+        onError: () =>
+          patch({ grade: { score: 0, comment: "Không chấm được, thử lại nhé." }, grading: false }),
       },
       { provider, maxTokens: 700 }
     );
@@ -126,30 +154,21 @@ export default function TranslatePractice({
 
   const next = () => {
     if (isLast) {
-      setDone(true);
+      patch({ done: true });
       return;
     }
-    setIdx((i) => i + 1);
-    setInput("");
-    setGrade(null);
+    patch({ idx: idx + 1, input: "", grade: null });
   };
 
-  const restart = () => {
-    setIdx(0);
-    setInput("");
-    setGrade(null);
-    setScores([]);
-    setDone(false);
-    generate();
-  };
-
-  if (done) {
-    const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "0";
+  if (st.done) {
+    const avg = st.scores.length
+      ? (st.scores.reduce((a, b) => a + b, 0) / st.scores.length).toFixed(1)
+      : "0";
     return (
       <div className="glass rounded-2xl p-6 text-center animate-fade-up">
         <div className="text-4xl font-extrabold text-accent">{avg}/10</div>
         <p className="text-muted text-sm mt-1 mb-5">điểm dịch trung bình</p>
-        <Button onClick={restart}>
+        <Button onClick={() => generate(sig)}>
           <RotateCcw size={16} /> Bộ câu mới
         </Button>
       </div>
@@ -160,9 +179,9 @@ export default function TranslatePractice({
     <div className="animate-fade-up">
       <div className="flex items-center justify-between text-xs text-muted mb-3">
         <span>Câu {idx + 1} / {total}</span>
-        {grade && (
-          <span className={grade.score >= 8 ? "text-ok" : grade.score >= 5 ? "text-accent-soft" : "text-bad"}>
-            {grade.score}/10
+        {st.grade && (
+          <span className={st.grade.score >= 8 ? "text-ok" : st.grade.score >= 5 ? "text-accent-soft" : "text-bad"}>
+            {st.grade.score}/10
           </span>
         )}
       </div>
@@ -180,20 +199,20 @@ export default function TranslatePractice({
         <p className="text-lg text-fg font-medium mb-4">{vi}</p>
 
         <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          value={st.input}
+          onChange={(e) => patch({ input: e.target.value })}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) (grade ? next() : submit());
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) (st.grade ? next() : submit());
           }}
           placeholder="Viết bản dịch tiếng Anh của bạn…"
-          disabled={!!grade || grading}
+          disabled={!!st.grade || st.grading}
           rows={3}
           className="w-full glass-input rounded-xl px-3.5 py-2.5 text-fg resize-y disabled:opacity-70"
         />
 
-        {!grade ? (
-          <Button onClick={submit} disabled={!input.trim() || grading} className="mt-3">
-            {grading ? (
+        {!st.grade ? (
+          <Button onClick={submit} disabled={!st.input.trim() || st.grading} className="mt-3">
+            {st.grading ? (
               <>
                 <Loader2 size={16} className="animate-spin" /> Đang chấm…
               </>
@@ -203,22 +222,22 @@ export default function TranslatePractice({
           </Button>
         ) : (
           <div className="mt-4 border-t border-white/10 pt-3 space-y-3">
-            {grade.comment && <p className="text-sm text-fg">{grade.comment}</p>}
+            {st.grade.comment && <p className="text-sm text-fg">{st.grade.comment}</p>}
 
-            {grade.reference && (
+            {st.grade.reference && (
               <div>
                 <div className="text-xs text-muted mb-0.5">Bản dịch tham khảo</div>
-                <p className="text-[15px] text-ok">{grade.reference}</p>
+                <p className="text-[15px] text-ok">{st.grade.reference}</p>
               </div>
             )}
 
-            {grade.errors && grade.errors.length > 0 && (
+            {st.grade.errors && st.grade.errors.length > 0 && (
               <div>
-                <div className="text-xs text-muted mb-1.5">Lỗi cần sửa ({grade.errors.length})</div>
+                <div className="text-xs text-muted mb-1.5">Lỗi cần sửa ({st.grade.errors.length})</div>
                 <ul className="space-y-2">
-                  {grade.errors.map((e, i) => (
+                  {st.grade.errors.map((e, i) => (
                     <li key={i} className="glass rounded-xl p-2.5">
-                      <div className="flex items-center gap-2 mb-0.5">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                         <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-accent-weak text-accent">
                           {TYPE_VI[e.type ?? ""] ?? e.type ?? "Lỗi"}
                         </span>

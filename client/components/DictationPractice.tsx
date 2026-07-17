@@ -4,9 +4,29 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, X, ArrowRight, Volume2, RotateCcw, Sparkles, Headphones } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
+import { useFeatureState } from "@/lib/store";
 import { studyBatch, recordResult, type PoolWord } from "@/lib/vocabPool";
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+
+interface DState {
+  started: boolean;
+  batch: PoolWord[];
+  idx: number;
+  input: string;
+  result: null | boolean;
+  correctCount: number;
+  done: boolean;
+}
+const INIT: DState = {
+  started: false,
+  batch: [],
+  idx: 0,
+  input: "",
+  result: null,
+  correctCount: 0,
+  done: false,
+};
 
 function speak(word: string) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -18,14 +38,18 @@ function speak(word: string) {
 }
 
 // Listen to a word, type its spelling. Grades as the "fill" mode so it also
-// drives spaced-repetition scheduling.
+// drives spaced-repetition scheduling. The run lives in the app store so
+// switching tabs keeps it — only "Lượt mới" or a page reload draws a new batch.
 export default function DictationPractice() {
-  const [batch, setBatch] = useState<PoolWord[]>(() => studyBatch(10));
-  const [idx, setIdx] = useState(0);
-  const [input, setInput] = useState("");
-  const [result, setResult] = useState<null | boolean>(null);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [done, setDone] = useState(false);
+  const [st, setSt] = useFeatureState<DState>("flash:dict", INIT);
+  const patch = (p: Partial<DState>) => setSt((prev) => ({ ...prev, ...p }));
+  const { batch, idx } = st;
+
+  // Draw the first batch once (localStorage is only readable after mount).
+  useEffect(() => {
+    if (!st.started) setSt({ ...INIT, started: true, batch: studyBatch(10) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const w = batch[idx];
 
@@ -37,6 +61,8 @@ export default function DictationPractice() {
       speak(w.word);
     }
   }, [idx, w]);
+
+  if (!st.started) return null;
 
   if (batch.length === 0) {
     return (
@@ -59,37 +85,29 @@ export default function DictationPractice() {
   const isLast = idx === total - 1;
 
   const submit = () => {
-    if (result !== null || !input.trim()) return;
-    const ok = normalize(input) === normalize(w.word);
-    setResult(ok);
-    if (ok) setCorrectCount((c) => c + 1);
+    if (st.result !== null || !st.input.trim()) return;
+    const ok = normalize(st.input) === normalize(w.word);
+    setSt((prev) => ({ ...prev, result: ok, correctCount: prev.correctCount + (ok ? 1 : 0) }));
     recordResult(w.word, "fill", ok);
   };
 
   const next = () => {
     if (isLast) {
-      setDone(true);
+      patch({ done: true });
       return;
     }
-    setIdx((i) => i + 1);
-    setInput("");
-    setResult(null);
+    patch({ idx: idx + 1, input: "", result: null });
   };
 
   const restart = () => {
-    setBatch(studyBatch(10));
-    setIdx(0);
-    setInput("");
-    setResult(null);
-    setCorrectCount(0);
-    setDone(false);
+    setSt({ ...INIT, started: true, batch: studyBatch(10) });
     played.current = -1;
   };
 
-  if (done) {
+  if (st.done) {
     return (
       <div className="glass rounded-2xl p-6 text-center animate-fade-up">
-        <div className="text-3xl font-extrabold text-fg">{correctCount}/{total}</div>
+        <div className="text-3xl font-extrabold text-fg">{st.correctCount}/{total}</div>
         <p className="text-muted text-sm mt-1 mb-5">từ nghe chép đúng lượt này</p>
         <Button onClick={restart}>
           <RotateCcw size={16} /> Lượt mới
@@ -102,7 +120,7 @@ export default function DictationPractice() {
     <div className="animate-fade-up">
       <div className="flex items-center justify-between text-xs text-muted mb-3">
         <span>Từ {idx + 1} / {total}</span>
-        <span>Đúng {correctCount}</span>
+        <span>Đúng {st.correctCount}</span>
       </div>
       <div className="h-1.5 rounded-full bg-accent-weak overflow-hidden mb-5">
         <div
@@ -124,24 +142,24 @@ export default function DictationPractice() {
         </button>
 
         <TextInput
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && (result === null ? submit() : next())}
+          value={st.input}
+          onChange={(e) => patch({ input: e.target.value })}
+          onKeyDown={(e) => e.key === "Enter" && (st.result === null ? submit() : next())}
           placeholder="Gõ từ bạn nghe được…"
-          disabled={result !== null}
+          disabled={st.result !== null}
           autoFocus
         />
-        {result === null && (
-          <Button onClick={submit} disabled={!input.trim()} className="mt-3">
+        {st.result === null && (
+          <Button onClick={submit} disabled={!st.input.trim()} className="mt-3">
             Kiểm tra
           </Button>
         )}
 
-        {result !== null && (
+        {st.result !== null && (
           <div className="mt-4 border-t border-white/10 pt-3">
-            <div className={`flex items-center gap-1.5 font-semibold ${result ? "text-ok" : "text-bad"}`}>
-              {result ? <Check size={16} /> : <X size={16} />}
-              {result ? "Chính xác!" : "Chưa đúng"}
+            <div className={`flex items-center gap-1.5 font-semibold ${st.result ? "text-ok" : "text-bad"}`}>
+              {st.result ? <Check size={16} /> : <X size={16} />}
+              {st.result ? "Chính xác!" : "Chưa đúng"}
             </div>
             <div className="text-sm text-muted mt-1">
               <span className="font-semibold text-fg">{w.word}</span>
