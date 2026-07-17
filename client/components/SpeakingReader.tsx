@@ -4,16 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { Volume2, Mic, MicOff, ArrowRight, RotateCcw, Check } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useFeatureState } from "@/lib/store";
+import { speak as ttsSpeak } from "@/lib/tts";
 import { normWord, splitSentences, scoreSentence } from "@/lib/textDiff";
 
-function speak(text: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "en-US";
-  u.rate = 0.92;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
+const speak = (text: string) => ttsSpeak(text, 0.92);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getSR(): any {

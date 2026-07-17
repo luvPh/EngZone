@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Sun, Moon } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
+import VoicePicker from "@/components/VoicePicker";
 
 const CRUMBS: Record<string, string> = {
   "/": "Trang chủ",
@@ -70,6 +71,9 @@ export default function Topbar() {
             Soft
           </button>
         </div>
+
+        {/* English read-aloud voice */}
+        <VoicePicker />
 
         {/* Theme toggle */}
         <button

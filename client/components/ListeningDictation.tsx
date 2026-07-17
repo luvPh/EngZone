@@ -4,16 +4,8 @@ import { useEffect, useRef } from "react";
 import { Volume2, Gauge, ArrowRight, RotateCcw, Check } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
 import { useFeatureState } from "@/lib/store";
+import { speak } from "@/lib/tts";
 import { normWord, splitSentences, scoreSentence } from "@/lib/textDiff";
-
-function speak(text: string, rate: number) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "en-US";
-  u.rate = rate;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
 
 interface Graded {
   matched: boolean[];

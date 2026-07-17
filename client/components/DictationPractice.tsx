@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Check, X, ArrowRight, Volume2, RotateCcw, Sparkles, Headphones } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
 import { useFeatureState } from "@/lib/store";
+import { speak as ttsSpeak } from "@/lib/tts";
 import { studyBatch, recordResult, type PoolWord } from "@/lib/vocabPool";
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -28,14 +29,7 @@ const INIT: DState = {
   done: false,
 };
 
-function speak(word: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance(word);
-  u.lang = "en-US";
-  u.rate = 0.9;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
+const speak = (word: string) => ttsSpeak(word, 0.9);
 
 // Listen to a word, type its spelling. Grades as the "fill" mode so it also
 // drives spaced-repetition scheduling. The run lives in the app store so

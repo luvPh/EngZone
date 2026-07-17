@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
+import { speak as ttsSpeak } from "@/lib/tts";
 import type { Flashcard } from "@/lib/types";
 
 export default function CardCarousel({ cards }: { cards: Flashcard[] }) {
@@ -16,13 +17,7 @@ export default function CardCarousel({ cards }: { cards: Flashcard[] }) {
     setI((prev) => (prev + delta + cards.length) % cards.length);
   };
 
-  const speak = () => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    const u = new SpeechSynthesisUtterance(card.word);
-    u.lang = "en-US";
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  };
+  const speak = () => ttsSpeak(card.word);
 
   return (
     <div className="mt-5">

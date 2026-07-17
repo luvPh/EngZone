@@ -9,6 +9,7 @@ import { extractJson } from "@/lib/extractJson";
 import { addVocab } from "@/lib/vocabPool";
 import { addFamilies } from "@/lib/wordFamily";
 import { getProvider } from "@/lib/modelConfig";
+import { speak } from "@/lib/tts";
 import type { Essay, VocabItem, FamilyMemberItem } from "@/lib/types";
 
 // Lookup result = a vocab item (base form) plus an optional word family.
@@ -24,13 +25,6 @@ type LookupState =
 // One word token (letters + internal ' or -) we render as clickable.
 const WORD_RE = /[A-Za-z]+(?:['’-][A-Za-z]+)*/g;
 
-function speak(word: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance(word);
-  u.lang = "en-US";
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
 
 export default function EssayView({
   data,

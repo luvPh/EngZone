@@ -22,6 +22,7 @@ import ExamPlayer from "@/components/ExamPlayer";
 import { cleanOption } from "@/components/QuizPlayer";
 import { getLibrary, deleteItem, type LibItem, type LibFeature } from "@/lib/library";
 import { getPool, removeWord, type PoolWord } from "@/lib/vocabPool";
+import { speak } from "@/lib/tts";
 import { extractJson } from "@/lib/extractJson";
 import type { Quiz, FlashSet, Essay, Exam } from "@/lib/types";
 
@@ -106,13 +107,7 @@ type Filter = "all" | LibFeature | "vocab";
 
 const VOCAB_COLOR = "#38bdf8";
 
-function speakWord(w: string) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance(w);
-  u.lang = "en-US";
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
+const speakWord = (w: string) => speak(w);
 
 // Catalogue of words manually saved from essay lookup.
 function SavedWords({ words, onRemove }: { words: PoolWord[]; onRemove: (w: string) => void }) {
