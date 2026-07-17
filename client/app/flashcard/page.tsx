@@ -168,7 +168,7 @@ export default function PracticePage() {
           options={[
             { value: "vocab", label: <><Layers size={15} /> Ôn nghĩa</> },
             { value: "family", label: <><Network size={15} /> Họ từ</> },
-            { value: "dictation", label: <><Headphones size={15} /> Nghe chép</> },
+            { value: "dictation", label: <><Headphones size={15} /> Nghe từ</> },
           ]}
         />
       </div>

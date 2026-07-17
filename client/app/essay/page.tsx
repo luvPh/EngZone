@@ -1,10 +1,12 @@
 "use client";
 
-import { FileText, RefreshCw, BookOpen, Mic } from "lucide-react";
+import { FileText, RefreshCw, BookOpen, Mic, Headphones, Languages } from "lucide-react";
 import { PageHeader, LevelSlider, Button, Segmented } from "@/components/ui";
 import GenForm from "@/components/GenForm";
 import EssayView from "@/components/EssayView";
 import SpeakingReader from "@/components/SpeakingReader";
+import ListeningDictation from "@/components/ListeningDictation";
+import TranslatePractice from "@/components/TranslatePractice";
 import Markdown from "@/components/Markdown";
 import ModelSelector from "@/components/ModelSelector";
 import { useModel } from "@/lib/modelConfig";
@@ -55,7 +57,10 @@ export default function EssayPage() {
     topic: "",
   });
   const [model, setModel] = useModel("essay");
-  const [mode, setMode] = useFeatureState<"read" | "speak">("essay:mode", "read");
+  const [mode, setMode] = useFeatureState<"read" | "speak" | "listen" | "translate">(
+    "essay:mode",
+    "read"
+  );
 
   const generate = (forceNew = false, resolvedTopic?: string) => {
     if (run.loading) return;
@@ -161,14 +166,24 @@ export default function EssayPage() {
               options={[
                 { value: "read", label: <><BookOpen size={15} /> Bài đọc</> },
                 { value: "speak", label: <><Mic size={15} /> Luyện nói</> },
+                { value: "listen", label: <><Headphones size={15} /> Nghe chép</> },
+                { value: "translate", label: <><Languages size={15} /> Luyện dịch</> },
               ]}
             />
           </div>
           {mode === "read" ? (
             <EssayView data={run.essay} provider={model} topic={run.topic} />
-          ) : (
+          ) : mode === "speak" ? (
             <div className="mt-5">
               <SpeakingReader text={run.essay.essay} />
+            </div>
+          ) : mode === "listen" ? (
+            <div className="mt-5">
+              <ListeningDictation text={run.essay.essay} />
+            </div>
+          ) : (
+            <div className="mt-5">
+              <TranslatePractice topic={run.topic} level={inputs.level} provider={model} />
             </div>
           )}
         </>

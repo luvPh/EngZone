@@ -192,6 +192,34 @@ export function checkCommand(text: string): string {
   return `/check ${text}\n\n${NO_SUGGEST}`;
 }
 
+// Luyện dịch: sinh câu TIẾNG VIỆT theo chủ đề + độ khó để người học dịch sang Anh.
+export function translateSentencesCommand(topic: string, level: number, count: number): string {
+  return [
+    `Tạo ${count} câu TIẾNG VIỆT về chủ đề "${topic}" để người học dịch sang tiếng Anh.`,
+    `Độ khó ${level}/5 (1 = rất đơn giản, 5 = nâng cao, câu dài & cấu trúc phức tạp hơn).`,
+    `Mỗi câu 8-20 từ, tự nhiên, dịch được sang tiếng Anh rõ ràng. Không đánh số.`,
+    ``,
+    `CHỈ trả về DUY NHẤT một JSON object (không kèm chữ nào khác, không bọc \`\`\`):`,
+    `{"sentences":["<câu tiếng Việt 1>","<câu tiếng Việt 2>"]}`,
+  ].join("\n");
+}
+
+// Luyện dịch: chấm 1 bản dịch Việt→Anh. Trả JSON để app render điểm + lỗi.
+export function gradeTranslationCommand(vi: string, en: string): string {
+  return [
+    `Chấm bản dịch Việt → Anh của người học.`,
+    `Câu tiếng Việt: "${vi}"`,
+    `Bản dịch của người học: "${en}"`,
+    ``,
+    `Chấm trên 3 tiêu chí: đúng nghĩa, ngữ pháp, dùng từ tự nhiên.`,
+    `Chấp nhận nhiều cách dịch đúng khác nhau — chỉ báo lỗi khi thực sự sai.`,
+    ``,
+    `CHỈ trả về DUY NHẤT một JSON object (không kèm chữ nào khác, không bọc \`\`\`):`,
+    `{"score":<0-10>,"reference":"<một bản dịch tiếng Anh chuẩn>","errors":[{"type":"<grammar|vocabulary|meaning|natural>","wrong":"<phần sai trong bài>","fix":"<sửa lại>","why":"<giải thích ngắn bằng tiếng Việt>"}],"comment":"<nhận xét ngắn 1 câu bằng tiếng Việt>"}`,
+    `Nếu bản dịch đã tốt, để "errors":[].`,
+  ].join("\n");
+}
+
 // Tra nghĩa 1 từ trong essay theo ĐÚNG ngữ cảnh câu. Trả JSON thuần để app parse.
 // "word" PHẢI là dạng nguyên bản (lemma): từ chia thì/bị động/số nhiều → đưa về
 // gốc (broken→break, studied→study, children→child). Kèm "family" (họ từ) nếu có.

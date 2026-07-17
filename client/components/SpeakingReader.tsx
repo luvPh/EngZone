@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, Mic, MicOff, ArrowRight, RotateCcw, Check } from "lucide-react";
 import { Button } from "@/components/ui";
-
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z']/g, "");
+import { normWord, splitSentences, scoreSentence } from "@/lib/textDiff";
 
 function speak(text: string) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -20,36 +19,6 @@ function getSR(): any {
   if (typeof window === "undefined") return null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
-}
-
-function splitSentences(text: string): string[] {
-  return text
-    .replace(/\s+/g, " ")
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter((s) => s.replace(/[^a-z]/gi, "").length > 0);
-}
-
-// Longest-common-subsequence: which target words appear (in order) in the spoken words.
-function lcsMatched(a: string[], b: string[]): boolean[] {
-  const n = a.length;
-  const m = b.length;
-  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
-  for (let i = 1; i <= n; i++)
-    for (let j = 1; j <= m; j++)
-      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
-  const matched = new Array(n).fill(false);
-  let i = n;
-  let j = m;
-  while (i > 0 && j > 0) {
-    if (a[i - 1] === b[j - 1]) {
-      matched[i - 1] = true;
-      i--;
-      j--;
-    } else if (dp[i - 1][j] >= dp[i][j - 1]) i--;
-    else j--;
-  }
-  return matched;
 }
 
 interface Graded {
@@ -103,12 +72,7 @@ export default function SpeakingReader({ text }: { text: string }) {
   const isLast = idx === total - 1;
 
   const grade = (transcript: string) => {
-    const targetNorm = displayTokens.map(norm);
-    const spokenNorm = (transcript.match(/\S+/g) ?? []).map(norm).filter(Boolean);
-    const matched = lcsMatched(targetNorm, spokenNorm);
-    const realIdx = targetNorm.map((w, k) => (w ? k : -1)).filter((k) => k >= 0);
-    const hit = realIdx.filter((k) => matched[k]).length;
-    const score = realIdx.length ? Math.round((hit / realIdx.length) * 100) : 0;
+    const { matched, score } = scoreSentence(sentence, transcript);
     setGraded({ matched, score, heard: transcript.trim() });
     setScores((s) => [...s, score]);
   };
@@ -224,7 +188,7 @@ export default function SpeakingReader({ text }: { text: string }) {
         <p className="text-lg leading-[1.9] text-fg">
           {displayTokens.map((tok, k) => {
             let cls = "";
-            if (graded && norm(tok)) {
+            if (graded && normWord(tok)) {
               cls = graded.matched[k]
                 ? "text-ok"
                 : "text-bad underline decoration-wavy decoration-bad/60";
