@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, X, ArrowRight, Volume2, RotateCcw, Sparkles, Headphones } from "lucide-react";
+import { Check, X, ArrowRight, Volume2, RotateCcw, Sparkles, Headphones, SkipForward } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
 import { useFeatureState } from "@/lib/store";
+import { initSkip, skipCurrent } from "@/lib/skipQueue";
 import { speak as ttsSpeak } from "@/lib/tts";
 import { studyBatch, recordResult, type PoolWord } from "@/lib/vocabPool";
 
@@ -13,11 +14,13 @@ const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
 interface DState {
   started: boolean;
   batch: PoolWord[];
-  idx: number;
+  idx: number; // position within `order`, not an index into `batch`
   input: string;
   result: null | boolean;
   correctCount: number;
   done: boolean;
+  order: number[]; // word order; skipped words get appended
+  requeued: number[];
 }
 const INIT: DState = {
   started: false,
@@ -27,6 +30,8 @@ const INIT: DState = {
   result: null,
   correctCount: 0,
   done: false,
+  order: [],
+  requeued: [],
 };
 
 const speak = (word: string) => ttsSpeak(word, 0.9);
@@ -41,11 +46,16 @@ export default function DictationPractice() {
 
   // Draw the first batch once (localStorage is only readable after mount).
   useEffect(() => {
-    if (!st.started) setSt({ ...INIT, started: true, batch: studyBatch(10) });
+    if (!st.started) {
+      const b = studyBatch(10);
+      setSt({ ...INIT, started: true, batch: b, ...initSkip(b.length) });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const w = batch[idx];
+  // Fall back to natural order for runs persisted before skip existed.
+  const order = st.order.length ? st.order : initSkip(batch.length).order;
+  const w = batch[order[idx]];
 
   // Auto-play the word each time a new one appears.
   const played = useRef(-1);
@@ -75,7 +85,7 @@ export default function DictationPractice() {
     );
   }
 
-  const total = batch.length;
+  const total = order.length;
   const isLast = idx === total - 1;
 
   const submit = () => {
@@ -93,8 +103,27 @@ export default function DictationPractice() {
     patch({ idx: idx + 1, input: "", result: null });
   };
 
+  // Skip = tính như sai (SRS ôn lại sớm) + gặp lại ở cuối lượt.
+  const onSkip = () => {
+    if (st.result !== null || !w) return;
+    recordResult(w.word, "fill", false);
+    const { next: ns, hasMore } = skipCurrent({ order, requeued: st.requeued }, idx);
+    if (!hasMore) {
+      patch({ done: true });
+      return;
+    }
+    patch({
+      order: ns.order,
+      requeued: ns.requeued,
+      idx: idx + 1,
+      input: "",
+      result: null,
+    });
+  };
+
   const restart = () => {
-    setSt({ ...INIT, started: true, batch: studyBatch(10) });
+    const b = studyBatch(10);
+    setSt({ ...INIT, started: true, batch: b, ...initSkip(b.length) });
     played.current = -1;
   };
 
@@ -144,9 +173,19 @@ export default function DictationPractice() {
           autoFocus
         />
         {st.result === null && (
-          <Button onClick={submit} disabled={!st.input.trim()} className="mt-3">
-            Kiểm tra
-          </Button>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <Button onClick={submit} disabled={!st.input.trim()}>
+              Kiểm tra
+            </Button>
+            <button
+              type="button"
+              onClick={onSkip}
+              title="Tính như sai, sẽ gặp lại cuối lượt"
+              className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-accent transition"
+            >
+              Bỏ qua <SkipForward size={15} />
+            </button>
+          </div>
         )}
 
         {st.result !== null && (

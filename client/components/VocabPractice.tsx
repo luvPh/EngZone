@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { Check, X, ArrowRight } from "lucide-react";
+import { Check, X, ArrowRight, SkipForward } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
 import { useFeatureState } from "@/lib/store";
 import { distractors, recordResult, nextIntervalDays, MASTER_AT, ALL_MODES, type PoolWord } from "@/lib/vocabPool";
+import { initSkip, skipCurrent } from "@/lib/skipQueue";
 
 type Mode = "mcq-word" | "mcq-meaning" | "fill";
 
@@ -43,14 +44,26 @@ function buildQuestion(w: PoolWord): Question {
 
 interface VState {
   sig: string; // which batch this run belongs to
-  idx: number;
+  idx: number; // position within `order`, not an index into `words`
   picked: string | null; // chosen word (mcq) or "submitted" (fill)
   input: string;
   result: null | boolean;
   correctCount: number;
   q: Question | null;
+  order: number[]; // question order; skipped items get appended
+  requeued: number[];
 }
-const INIT: VState = { sig: "", idx: 0, picked: null, input: "", result: null, correctCount: 0, q: null };
+const INIT: VState = {
+  sig: "",
+  idx: 0,
+  picked: null,
+  input: "",
+  result: null,
+  correctCount: 0,
+  q: null,
+  order: [],
+  requeued: [],
+};
 
 // The run lives in the app store so switching tabs keeps the current question,
 // answer and score — it only restarts on a new batch or a full page reload.
@@ -68,17 +81,20 @@ export default function VocabPractice({
   // New batch → fresh run (and build its first question once).
   useEffect(() => {
     if (st.sig !== sig && words.length) {
-      setSt({ ...INIT, sig, q: buildQuestion(words[0]) });
+      const skip = initSkip(words.length);
+      setSt({ ...INIT, sig, ...skip, q: buildQuestion(words[skip.order[0]]) });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig]);
 
-  const idx = Math.min(st.idx, Math.max(0, words.length - 1));
-  const w = words[idx];
+  // Fall back to natural order for runs persisted before skip existed.
+  const order = st.order.length ? st.order : initSkip(words.length).order;
+  const idx = Math.min(st.idx, Math.max(0, order.length - 1));
+  const w = words[order[idx]];
   const q = st.q;
   const { result, input, picked, correctCount } = st;
 
-  const total = words.length;
+  const total = order.length;
   const isLast = idx === total - 1;
 
   const grade = (ok: boolean) => {
@@ -107,7 +123,35 @@ export default function VocabPractice({
       onDone(correctCount);
       return;
     }
-    patch({ idx: idx + 1, picked: null, input: "", result: null, q: buildQuestion(words[idx + 1]) });
+    patch({
+      idx: idx + 1,
+      picked: null,
+      input: "",
+      result: null,
+      q: buildQuestion(words[order[idx + 1]]),
+    });
+  };
+
+  // Skip = tính như trả lời sai (SRS đẩy từ này lên ôn sớm) + đẩy xuống cuối
+  // lượt để gặp lại một lần nữa.
+  const onSkip = () => {
+    if (result !== null || !w || !q) return;
+    recordResult(w.word, q.mode, false);
+    const { next: ns, hasMore } = skipCurrent({ order, requeued: st.requeued }, idx);
+    if (!hasMore) {
+      onDone(correctCount);
+      return;
+    }
+    setSt((prev) => ({
+      ...prev,
+      order: ns.order,
+      requeued: ns.requeued,
+      idx: idx + 1,
+      picked: null,
+      input: "",
+      result: null,
+      q: buildQuestion(words[ns.order[idx + 1]]),
+    }));
   };
 
   // Enter: nộp câu trả lời (khi chưa nộp) → sau đó Enter lần nữa để sang câu tiếp.
@@ -201,6 +245,20 @@ export default function VocabPractice({
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* Skip — chỉ hiện khi chưa trả lời */}
+        {result === null && (
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={onSkip}
+              title="Tính như sai, sẽ gặp lại cuối lượt"
+              className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-accent transition"
+            >
+              Bỏ qua <SkipForward size={15} />
+            </button>
           </div>
         )}
 

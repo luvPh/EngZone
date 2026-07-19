@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Volume2, Gauge, ArrowRight, RotateCcw, Check } from "lucide-react";
+import { Volume2, Gauge, ArrowRight, RotateCcw, Check, SkipForward } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
 import { useFeatureState } from "@/lib/store";
+import { initSkip, skipCurrent } from "@/lib/skipQueue";
 import { speak } from "@/lib/tts";
 import { normWord, splitSentences, scoreSentence } from "@/lib/textDiff";
 
@@ -13,14 +14,26 @@ interface Graded {
 }
 interface LState {
   sig: string; // which passage this run belongs to
-  idx: number;
+  idx: number; // position within `order`, not an index into the sentence list
   input: string;
   graded: Graded | null;
   scores: number[];
   done: boolean;
   slow: boolean;
+  order: number[]; // sentence order; skipped sentences get appended
+  requeued: number[];
 }
-const INIT: LState = { sig: "", idx: 0, input: "", graded: null, scores: [], done: false, slow: false };
+const INIT: LState = {
+  sig: "",
+  idx: 0,
+  input: "",
+  graded: null,
+  scores: [],
+  done: false,
+  slow: false,
+  order: [],
+  requeued: [],
+};
 
 const sigOf = (t: string) => `${t.length}|${t.slice(0, 40)}`;
 
@@ -37,13 +50,15 @@ export default function ListeningDictation({ text }: { text: string }) {
 
   // New passage → start a fresh run.
   useEffect(() => {
-    if (st.sig !== sig) setSt({ ...INIT, sig });
+    if (st.sig !== sig) setSt({ ...INIT, sig, ...initSkip(sentences.current.length) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig]);
 
   const list = sentences.current;
-  const idx = Math.min(st.idx, Math.max(0, list.length - 1));
-  const sentence = list[idx];
+  // Fall back to natural order for runs persisted before skip existed.
+  const order = st.order.length ? st.order : initSkip(list.length).order;
+  const idx = Math.min(st.idx, Math.max(0, order.length - 1));
+  const sentence = list[order[idx]];
 
   // Auto-play each new sentence.
   const played = useRef(-1);
@@ -63,7 +78,7 @@ export default function ListeningDictation({ text }: { text: string }) {
     return <p className="text-muted text-sm">Không tách được câu để nghe chép.</p>;
   }
 
-  const total = list.length;
+  const total = order.length;
   const isLast = idx === total - 1;
   const displayTokens = sentence.match(/\S+/g) ?? [];
   const rate = st.slow ? 0.7 : 1;
@@ -82,8 +97,26 @@ export default function ListeningDictation({ text }: { text: string }) {
     patch({ idx: idx + 1, input: "", graded: null });
   };
 
+  // Skip = tính như sai (ghi 0 điểm cho câu này) + gặp lại ở cuối lượt.
+  const onSkip = () => {
+    if (st.graded) return;
+    const { next: ns, hasMore } = skipCurrent({ order, requeued: st.requeued }, idx);
+    if (!hasMore) {
+      patch({ scores: [...st.scores, 0], done: true });
+      return;
+    }
+    patch({
+      scores: [...st.scores, 0],
+      order: ns.order,
+      requeued: ns.requeued,
+      idx: idx + 1,
+      input: "",
+      graded: null,
+    });
+  };
+
   const restart = () => {
-    setSt({ ...INIT, sig });
+    setSt({ ...INIT, sig, ...initSkip(list.length) });
     played.current = -1;
   };
 
@@ -157,9 +190,19 @@ export default function ListeningDictation({ text }: { text: string }) {
         />
 
         {!st.graded ? (
-          <Button onClick={submit} disabled={!st.input.trim()} className="mt-3">
-            Kiểm tra
-          </Button>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <Button onClick={submit} disabled={!st.input.trim()}>
+              Kiểm tra
+            </Button>
+            <button
+              type="button"
+              onClick={onSkip}
+              title="Tính 0 điểm, sẽ gặp lại cuối lượt"
+              className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-accent transition"
+            >
+              Bỏ qua <SkipForward size={15} />
+            </button>
+          </div>
         ) : (
           <div className="mt-4 border-t border-white/10 pt-3">
             <div className="text-xs text-muted mb-1">Câu gốc:</div>

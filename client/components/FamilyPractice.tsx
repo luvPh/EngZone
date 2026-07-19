@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, X, ArrowRight } from "lucide-react";
+import { Check, X, ArrowRight, SkipForward } from "lucide-react";
 import { Button, TextInput } from "@/components/ui";
 import { recordFamilyResult, FAMILY_MASTER_AT, type FamilyEntry } from "@/lib/wordFamily";
+import { initSkip, skipCurrent, type SkipState } from "@/lib/skipQueue";
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
 const hint = (w: string) => w.split("").map((c) => (c === " " ? " " : "‧")).join(" ");
@@ -28,12 +29,14 @@ export default function FamilyPractice({
   const [input, setInput] = useState("");
   const [result, setResult] = useState<null | boolean>(null);
   const [correctCount, setCorrectCount] = useState(0);
+  const [skip, setSkip] = useState<SkipState>(() => initSkip(families.length));
 
-  const fam = families[idx];
+  const order = skip.order;
+  const fam = families[order[idx]];
   const q = useMemo(() => buildQ(fam), [idx]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!fam) return null;
 
-  const total = families.length;
+  const total = order.length;
   const isLast = idx === total - 1;
 
   const submit = () => {
@@ -45,6 +48,18 @@ export default function FamilyPractice({
   };
   const next = () => {
     if (isLast) return onDone(correctCount);
+    setIdx((i) => i + 1);
+    setInput("");
+    setResult(null);
+  };
+
+  // Skip = tính như sai + đẩy xuống cuối lượt để gặp lại một lần nữa.
+  const onSkip = () => {
+    if (result !== null) return;
+    recordFamilyResult(fam.root, false);
+    const { next: ns, hasMore } = skipCurrent(skip, idx);
+    if (!hasMore) return onDone(correctCount);
+    setSkip(ns);
     setIdx((i) => i + 1);
     setInput("");
     setResult(null);
@@ -106,9 +121,19 @@ export default function FamilyPractice({
           autoFocus
         />
         {result === null && (
-          <Button onClick={submit} disabled={!input.trim()} className="mt-3">
-            Kiểm tra
-          </Button>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <Button onClick={submit} disabled={!input.trim()}>
+              Kiểm tra
+            </Button>
+            <button
+              type="button"
+              onClick={onSkip}
+              title="Tính như sai, sẽ gặp lại cuối lượt"
+              className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-accent transition"
+            >
+              Bỏ qua <SkipForward size={15} />
+            </button>
+          </div>
         )}
 
         {result !== null && (

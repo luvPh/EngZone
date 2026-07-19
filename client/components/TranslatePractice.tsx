@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { Loader2, ArrowRight, RotateCcw, Check, Languages, Lightbulb } from "lucide-react";
+import { Loader2, ArrowRight, RotateCcw, Check, Languages, Lightbulb, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui";
 import { useFeatureState } from "@/lib/store";
+import { initSkip, skipCurrent } from "@/lib/skipQueue";
 import { runCommand } from "@/lib/stream";
 import { translateSentencesCommand, gradeTranslationCommand } from "@/lib/prompts";
 import { extractJson } from "@/lib/extractJson";
@@ -26,7 +27,7 @@ interface Grade {
 interface TState {
   sig: string; // topic|level this set was generated for
   sentences: string[];
-  idx: number;
+  idx: number; // position within `order`, not an index into `sentences`
   input: string;
   grade: Grade | null;
   grading: boolean;
@@ -34,6 +35,8 @@ interface TState {
   done: boolean;
   loading: boolean;
   err: string;
+  order: number[]; // sentence order; skipped sentences get appended
+  requeued: number[];
 }
 
 const INIT: TState = {
@@ -47,6 +50,8 @@ const INIT: TState = {
   done: false,
   loading: false,
   err: "",
+  order: [],
+  requeued: [],
 };
 
 const TYPE_VI: Record<string, string> = {
@@ -86,6 +91,7 @@ export default function TranslatePractice({
           const list = (obj?.sentences ?? []).filter((s) => typeof s === "string" && s.trim());
           patch({
             sentences: list,
+            ...initSkip(list.length),
             loading: false,
             err: list.length ? "" : "Không tạo được câu, thử lại nhé.",
           });
@@ -122,10 +128,12 @@ export default function TranslatePractice({
     );
   }
 
-  const total = st.sentences.length;
+  // Fall back to natural order for runs persisted before skip existed.
+  const order = st.order.length ? st.order : initSkip(st.sentences.length).order;
+  const total = order.length;
   const idx = Math.min(st.idx, total - 1);
   const isLast = idx === total - 1;
-  const vi = st.sentences[idx];
+  const vi = st.sentences[order[idx]];
 
   const submit = () => {
     if (st.grading || st.grade || !st.input.trim()) return;
@@ -158,6 +166,24 @@ export default function TranslatePractice({
       return;
     }
     patch({ idx: idx + 1, input: "", grade: null });
+  };
+
+  // Skip = tính như sai (0 điểm, không tốn lượt gọi AI) + gặp lại ở cuối lượt.
+  const onSkip = () => {
+    if (st.grading || st.grade) return;
+    const { next: ns, hasMore } = skipCurrent({ order, requeued: st.requeued }, idx);
+    if (!hasMore) {
+      patch({ scores: [...st.scores, 0], done: true });
+      return;
+    }
+    patch({
+      scores: [...st.scores, 0],
+      order: ns.order,
+      requeued: ns.requeued,
+      idx: idx + 1,
+      input: "",
+      grade: null,
+    });
   };
 
   if (st.done) {
@@ -211,15 +237,26 @@ export default function TranslatePractice({
         />
 
         {!st.grade ? (
-          <Button onClick={submit} disabled={!st.input.trim() || st.grading} className="mt-3">
-            {st.grading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" /> Đang chấm…
-              </>
-            ) : (
-              "Chấm bài"
-            )}
-          </Button>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <Button onClick={submit} disabled={!st.input.trim() || st.grading}>
+              {st.grading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Đang chấm…
+                </>
+              ) : (
+                "Chấm bài"
+              )}
+            </Button>
+            <button
+              type="button"
+              onClick={onSkip}
+              disabled={st.grading}
+              title="Tính 0 điểm, sẽ gặp lại cuối lượt"
+              className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-accent transition disabled:opacity-40"
+            >
+              Bỏ qua <SkipForward size={15} />
+            </button>
+          </div>
         ) : (
           <div className="mt-4 border-t border-white/10 pt-3 space-y-3">
             {st.grade.comment && <p className="text-sm text-fg">{st.grade.comment}</p>}
