@@ -16,8 +16,8 @@ import { essayCommand } from "@/lib/prompts";
 import { extractJson } from "@/lib/extractJson";
 import { recordActivity } from "@/lib/storage";
 import { findItem, saveItem } from "@/lib/library";
-import { randomTopic } from "@/lib/topicPool";
-import { addVocab } from "@/lib/vocabPool";
+import { nextEssayTopic } from "@/lib/topicPool";
+import { addVocab, getPool } from "@/lib/vocabPool";
 import { addFamilies } from "@/lib/wordFamily";
 import type { Essay } from "@/lib/types";
 
@@ -66,7 +66,7 @@ export default function EssayPage() {
     if (run.loading) return;
     const topic = (
       resolvedTopic ??
-      (inputs.custom && inputs.topic.trim() ? inputs.topic.trim() : randomTopic())
+      (inputs.custom && inputs.topic.trim() ? inputs.topic.trim() : nextEssayTopic())
     ).trim();
 
     if (!forceNew) {
@@ -90,6 +90,8 @@ export default function EssayPage() {
     setRun({ loading: true, error: "", essay: null, raw: "", source: "new", topic });
     recordActivity({ feature: "essay", topic, level: inputs.level });
 
+    // Chụp pool TRƯỚC khi gen để lọc bỏ từ đã học khỏi vocab sau khi model trả về.
+    const known = new Set(getPool().map((w) => w.word.trim().toLowerCase()));
     runCommand(KEY, essayCommand(topic, inputs.level), {
       onText: () => {},
       onDone: (full) => {
@@ -97,6 +99,12 @@ export default function EssayPage() {
         if (!essay) {
           setRun({ loading: false, error: "", essay: null, raw: full, source: "new", topic });
           return;
+        }
+        // Post-filter: chỉ giữ từ MỚI (chưa có trong pool); model đã sinh dư (14-18)
+        // nên vẫn còn đủ. Nếu lọc xong còn quá ít (<4) thì giữ nguyên để không trống.
+        if (essay.vocab?.length) {
+          const fresh = essay.vocab.filter((v) => v.word && !known.has(v.word.trim().toLowerCase()));
+          essay.vocab = (fresh.length >= 4 ? fresh : essay.vocab).slice(0, 12);
         }
         setRun({ loading: false, error: "", essay, raw: "", source: "new", topic });
         if (essay.vocab?.length) addVocab(essay.vocab, topic);

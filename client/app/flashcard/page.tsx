@@ -32,6 +32,7 @@ function StudyCards({
 }) {
   const cards = words.map((w) => ({
     word: w.word,
+    short: w.short,
     meaning: w.meaning,
     ipa: w.ipa,
     example: w.example,
@@ -62,7 +63,7 @@ function seedFromLibrary() {
     const set = extractJson<FlashSet>(it.content);
     if (set?.cards?.length) {
       addVocab(
-        set.cards.map((c) => ({ word: c.word, meaning: c.meaning, ipa: c.ipa, example: c.example })),
+        set.cards.map((c) => ({ word: c.word, short: c.short, meaning: c.meaning, ipa: c.ipa, example: c.example })),
         it.topic
       );
     }

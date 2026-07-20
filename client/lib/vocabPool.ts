@@ -8,6 +8,7 @@ import type { VocabItem } from "./types";
 
 export interface PoolWord {
   word: string;
+  short?: string; // nghĩa ngắn gọn 1-4 từ (fallback sang meaning nếu thiếu)
   meaning: string;
   pos?: string;
   ipa?: string;
@@ -79,10 +80,12 @@ export function addVocab(
       if (!existing.ipa && it.ipa) existing.ipa = it.ipa;
       if (!existing.example && it.example) existing.example = it.example;
       if (!existing.pos && it.pos) existing.pos = it.pos;
+      if (!existing.short && it.short) existing.short = it.short;
       if (opts.saved) existing.saved = true;
     } else {
       byWord.set(k, {
         word: cap(it.word),
+        short: it.short,
         meaning: it.meaning.trim(),
         pos: it.pos,
         ipa: it.ipa,

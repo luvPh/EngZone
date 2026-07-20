@@ -22,6 +22,8 @@ export interface Quiz {
 export interface Flashcard {
   word: string;
   ipa?: string;
+  /** Nghĩa ngắn gọn 1-4 từ (thẻ cũ có thể thiếu → fallback sang `meaning`). */
+  short?: string;
   meaning: string;
   example?: string;
   note?: string;
@@ -33,6 +35,8 @@ export interface FlashSet {
 
 export interface VocabItem {
   word: string;
+  /** Nghĩa ngắn gọn 1-4 từ để nhớ nhanh (có thể thiếu ở dữ liệu cũ). */
+  short?: string;
   meaning: string;
   pos?: string;
   ipa?: string;

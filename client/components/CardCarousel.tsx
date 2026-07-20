@@ -61,7 +61,14 @@ export default function CardCarousel({ cards }: { cards: Flashcard[] }) {
         <div className="mt-auto pt-5">
           {revealed ? (
             <div className="animate-fade-up border-t border-border pt-4">
-              <div className="text-lg text-fg font-semibold">{card.meaning}</div>
+              <div className="text-xl text-fg font-bold">
+                {card.short || card.meaning}
+              </div>
+              {card.short && (
+                <p className="text-muted text-sm mt-1.5 leading-relaxed">
+                  {card.meaning}
+                </p>
+              )}
               {card.note && <p className="text-muted text-sm mt-2">{card.note}</p>}
             </div>
           ) : (
